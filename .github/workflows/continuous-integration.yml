@@ -8,6 +8,8 @@ on:
             - 'main'
         tags:
             - 'v*.*.*'
+    # Run by the "Rebuild the widget" workflow on the commit it pushed to a Renovate branch
+    workflow_dispatch:
 
 permissions:
     contents: read

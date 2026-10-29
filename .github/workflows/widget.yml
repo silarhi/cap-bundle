@@ -1,0 +1,64 @@
+name: 'Rebuild the widget'
+
+# The bundle ships the Cap widget (public/widget/), copied by `pnpm build`. Renovate bumps cap-widget and @cap.js/wasm
+# without building: this workflow commits the rebuilt files to its branch, then runs the CI on that commit, which a
+# push made with GITHUB_TOKEN would not trigger. The E2E job tests the new widget against a real Cap server before the
+# PR auto-merges.
+on:
+    pull_request:
+        paths:
+            - 'assets/package.json'
+            - 'assets/pnpm-lock.yaml'
+
+permissions:
+    contents: read
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.head_ref }}
+    cancel-in-progress: true
+
+jobs:
+    rebuild:
+        name: Rebuild
+        # Renovate's branches only: a contributor commits the built files, and the Build job of the CI checks them
+        if: github.actor == 'renovate[bot]' && startsWith(github.head_ref, 'renovate/') && github.event.pull_request.head.repo.full_name == github.repository
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            actions: write
+            contents: write
+        defaults:
+            run:
+                working-directory: assets
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+              with:
+                  ref: ${{ github.head_ref }}
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v6
+              with:
+                  package_json_file: 'assets/package.json'
+            - name: Setup Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: '26'
+                  cache: 'pnpm'
+                  cache-dependency-path: 'assets/pnpm-lock.yaml'
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+            - name: Build
+              run: pnpm build
+            - name: Commit the built files and run the CI
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  git add -A -- dist ../public
+                  if git diff --cached --quiet; then
+                      echo "The built files are up to date."
+                      exit 0
+                  fi
+                  git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+                      commit -q -m "Rebuild the assets for ${GITHUB_HEAD_REF#renovate/}"
+                  git push -q origin "HEAD:${GITHUB_HEAD_REF}"
+                  gh workflow run continuous-integration.yml --ref "${GITHUB_HEAD_REF}"
