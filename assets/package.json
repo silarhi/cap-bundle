@@ -57,6 +57,7 @@
     "scripts": {
         "build": "tsdown",
         "test": "vitest run",
+        "test:coverage": "vitest run --coverage",
         "test:watch": "vitest",
         "typecheck": "tsc --noEmit",
         "lint": "biome check src test",
@@ -74,6 +75,7 @@
     "devDependencies": {
         "@biomejs/biome": "2.6.3",
         "@hotwired/stimulus": "^3.2.2",
+        "@vitest/coverage-v8": "^5.0.5",
         "cap-widget": "^0.1.58",
         "jsdom": "^30.0.0",
         "tsdown": "^0.23.1",

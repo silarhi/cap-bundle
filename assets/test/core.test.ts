@@ -143,6 +143,18 @@ describe('checkbox challenge', () => {
         await vi.waitFor(() => expect(listener).toHaveBeenCalledOnce())
     })
 
+    it('submits all the same when the challenge fails', async () => {
+        FakeWidget.fail = true
+        const form = render(html)
+        const failed = vi.fn()
+        form.addEventListener('cap:failed', failed)
+        const done = submitted(form)
+
+        form.requestSubmit()
+        await done
+        expect(failed).toHaveBeenCalledOnce()
+    })
+
     it('resets the widgets of a form', async () => {
         const form = render(html)
         const widget = form.querySelector('cap-widget') as FakeWidget
@@ -209,6 +221,35 @@ describe('configure', () => {
         expect(window.CAP_CSS_NONCE).toBe('abc')
         expect(window.CAP_SCRIPT_NONCE).toBe('abc')
         expect(window.CAP_CUSTOM_HASHWX_URL).toBeUndefined()
+    })
+})
+
+describe('page lifecycle', () => {
+    const html = `<form>
+        <input type="hidden" name="contact[cap]" data-silarhi-cap="invisible" data-cap-api-endpoint="https://cap.test/key/">
+    </form>`
+
+    it('forgets the tokens of a page the back-forward cache restores', async () => {
+        const form = render(html)
+        await solve(form)
+
+        window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }))
+        expect(new FormData(form).get('contact[cap]')).toBe('token-1')
+        window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+        expect(new FormData(form).get('contact[cap]')).toBe('')
+    })
+
+    it('does not submit a form that left the page while solving', async () => {
+        const form = render(html)
+        const solved = vi.fn()
+        form.addEventListener('cap:solved', solved)
+        const listener = vi.fn()
+        form.addEventListener('submit', listener)
+
+        form.requestSubmit()
+        form.remove()
+        await vi.waitFor(() => expect(solved).toHaveBeenCalledOnce())
+        expect(listener).not.toHaveBeenCalled()
     })
 })
 
