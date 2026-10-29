@@ -22,6 +22,7 @@ use Silarhi\CapBundle\Form\CapType;
 use Silarhi\CapBundle\Tests\Fixtures\CapServerMock;
 use Silarhi\CapBundle\Tests\Fixtures\TestKernel;
 use Silarhi\CapBundle\Validator\Cap;
+use Silarhi\CapBundle\Validator\CapValidator;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
@@ -33,6 +34,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Service\ResetInterface;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
 use Twig\Environment;
 
@@ -184,6 +186,23 @@ final class CapTypeTest extends KernelTestCase
         self::assertCount(1, $errors);
         self::assertSame($message, $errors[0]->getMessage());
         self::assertCount(0, $form->getErrors(), 'The error stays on the field, next to the widget');
+    }
+
+    public function testTheValidatorIsResetBetweenRequests(): void
+    {
+        self::bootKernel();
+
+        $resetter = self::getContainer()->get('services_resetter');
+        self::assertInstanceOf(ResetInterface::class, $resetter);
+        $validator = self::getContainer()->get('cap.validator');
+        self::assertInstanceOf(CapValidator::class, $validator);
+
+        // An accepted token adds no violation: the validator never reads its context
+        $validator->validate('site-key:abc:def', new Cap());
+        self::assertNotNull($validator->getLastResult());
+
+        $resetter->reset();
+        self::assertNull($validator->getLastResult());
     }
 
     public function testTheConstraintProtectsAnyObject(): void

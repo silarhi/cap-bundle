@@ -163,7 +163,8 @@ final class SilarhiCapBundle extends AbstractBundle
 
         $services->set('cap.validator', CapValidator::class)
             ->args([service('cap.verifier'), $config['enabled']])
-            ->tag('validator.constraint_validator');
+            ->tag('validator.constraint_validator')
+            ->tag('kernel.reset', ['method' => 'reset']);
 
         $services->set('cap.form_type', CapType::class)
             ->args([

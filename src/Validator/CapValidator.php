@@ -23,8 +23,13 @@ use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 use Symfony\Component\Validator\Exception\UnexpectedValueException;
+use Symfony\Contracts\Service\ResetInterface;
 
-final class CapValidator extends ConstraintValidator
+/**
+ * Resettable: long-running workers (FrankenPHP, RoadRunner, Swoole) keep the service between requests, and
+ * getLastResult() must not leak the answer to another visitor's submission.
+ */
+final class CapValidator extends ConstraintValidator implements ResetInterface
 {
     private ?VerificationResult $lastResult = null;
 
@@ -78,5 +83,11 @@ final class CapValidator extends ConstraintValidator
     public function getLastResult(): ?VerificationResult
     {
         return $this->lastResult;
+    }
+
+    #[Override]
+    public function reset(): void
+    {
+        $this->lastResult = null;
     }
 }
