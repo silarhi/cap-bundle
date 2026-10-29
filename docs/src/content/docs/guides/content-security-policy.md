@@ -20,14 +20,17 @@ Pass the nonce of the request to the field, for instance the one of
 [NelmioSecurityBundle](https://github.com/nelmio/NelmioSecurityBundle):
 
 ```twig
-{{ form_row(form.cap, { csp_nonce: csp_nonce('script') }) }}
+{{ form_row(form.captcha, { csp_nonce: csp_nonce('script') }) }}
 ```
 
 or from the form type:
 
 ```php
-$builder->add('cap', CapType::class, ['csp_nonce' => $this->nonceGenerator->getNonce()]);
+$builder->add('captcha', CapType::class, ['csp_nonce' => $this->nonceGenerator->getNonce()]);
 ```
+
+With [Symfony Reprise](/guides/javascript/#symfony-reprise-vite-rsbuild), put the nonce on the tags it renders with
+its `RenderAssetTagEvent`, and still pass it to `CapType` for the widget.
 
 The nonce goes on the `<script>` of the bundle, and to `window.CAP_CSS_NONCE` and `window.CAP_SCRIPT_NONCE`, which the
 widget puts on the `<style>` and the scripts it injects: the decompression fallback, and the script of the sandboxed

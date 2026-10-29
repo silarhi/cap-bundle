@@ -8,13 +8,13 @@ class FakeWidget extends HTMLElement {
     token: string | null = null
 
     async solve() {
-        FakeWidget.solves++
+        const solve = ++FakeWidget.solves
         await Promise.resolve()
         if (FakeWidget.fail) {
             this.dispatchEvent(new CustomEvent('error', { detail: { message: 'failed' } }))
             return undefined
         }
-        this.token = `token-${FakeWidget.solves}`
+        this.token = `token-${solve}`
         this.dispatchEvent(new CustomEvent('solve', { detail: { token: this.token } }))
         return { success: true, token: this.token }
     }
@@ -240,6 +240,47 @@ describe('checkbox challenge', () => {
 
         reset(form)
         expect(widget.token).toBeNull()
+    })
+})
+
+describe('several challenges on a page', () => {
+    const html = `
+        <form id="contact">
+            <input type="hidden" name="contact[captcha]" data-silarhi-cap="invisible" data-cap-api-endpoint="https://cap.test/key/">
+            <button type="submit">Send</button>
+        </form>
+        <form id="newsletter" novalidate>
+            <cap-widget data-silarhi-cap="checkbox" data-cap-hidden-field-name="newsletter[captcha]"></cap-widget>
+            <button type="submit">Subscribe</button>
+        </form>`
+
+    it('solves only the challenges of the submitted form', async () => {
+        render(html)
+        const contact = document.getElementById('contact') as HTMLFormElement
+        const newsletter = document.getElementById('newsletter') as HTMLFormElement
+        const done = submitted(newsletter)
+
+        newsletter.requestSubmit()
+        await done
+        expect((newsletter.querySelector('cap-widget') as FakeWidget).token).toBe('token-1')
+        expect(new FormData(contact).get('contact[captcha]')).toBe('')
+        expect(FakeCap.configs).toEqual([])
+    })
+
+    it('gives each form its own token', async () => {
+        render(html)
+        const contact = document.getElementById('contact') as HTMLFormElement
+        const newsletter = document.getElementById('newsletter') as HTMLFormElement
+
+        expect(await solve(document.body)).toBe(true)
+        const tokens = [
+            new FormData(contact).get('contact[captcha]'),
+            (newsletter.querySelector('cap-widget') as FakeWidget).token,
+        ]
+        expect(new Set(tokens).size).toBe(2)
+
+        reset(newsletter)
+        expect(new FormData(contact).get('contact[captcha]')).toBe(tokens[0])
     })
 })
 

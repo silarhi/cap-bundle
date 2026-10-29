@@ -43,7 +43,7 @@ A Live Component re-render morphs the widget back to its server-side markup, dro
 the widget out of the morph with `data-live-ignore`:
 
 ```twig
-{{ form_row(form.cap, { attr: { 'data-live-ignore': true } }) }}
+{{ form_row(form.captcha, { attr: { 'data-live-ignore': true } }) }}
 ```
 
 The token is redeemed when the form is submitted, not on each re-render: validate the `Cap` constraint in the

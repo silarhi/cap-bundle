@@ -21,7 +21,7 @@
 <h1 align="center">Cap Bundle</h1>
 
 <p align="center">
-    <strong><a href="https://trycap.dev">Cap</a>, the self-hosted proof-of-work CAPTCHA, in your Symfony forms.</strong><br>
+    <strong><a href="https://trycap.dev">Cap CAPTCHA</a> (trycap.dev), the self-hosted proof-of-work CAPTCHA, in your Symfony forms.</strong><br>
     A form type, a validator constraint and a widget that keeps working across Turbo visits — the
     <a href="https://github.com/karser/KarserRecaptcha3Bundle">KarserRecaptcha3Bundle</a> way, without Google.
 </p>
@@ -37,7 +37,7 @@
 - **One form field**: `CapType` renders the widget and validates the token on submit, with the `Cap` constraint
 - **Checkbox or invisible**: Cap's widget, or nothing at all: the challenge is solved while the visitor fills the form
 - **SPA ready**: Turbo Drive, Turbo Frames, the Turbo cache, the back-forward cache and forms you submit with `fetch()`
-- **Stimulus or not**: a controller StimulusBundle registers for you, or a script the form renders, with no build step
+- **Stimulus or not**: a controller StimulusBundle or Symfony Reprise registers for you, or a script the form renders, with no build step
 - **Self-hosted end to end**: your Cap server, and the widget script and its WebAssembly solver from your domain if you like
 - **Fails closed**: a Cap server out of reach rejects the submission, and the error stays on the field
 - **Any payload**: the `#[Cap]` constraint and the `CapVerifierInterface` service protect JSON endpoints too
@@ -46,12 +46,13 @@
 
 - PHP 8.2+
 - Symfony 6.4, 7.x or 8.x
+- A PSR-18 HTTP client: Symfony's, with a PSR-17 implementation such as `nyholm/psr7`, or your own
 - A [Cap Standalone](https://trycap.dev/guide/standalone/) server, and a site key created in its dashboard
 
 ## Installation
 
 ```bash
-composer require silarhi/cap-bundle
+composer require silarhi/cap-bundle nyholm/psr7
 ```
 
 ```dotenv
@@ -61,9 +62,9 @@ CAP_SECRET_KEY=<the secret key of the site key>
 ```
 
 ```yaml
-# config/packages/silarhi_cap.yaml
+# config/packages/cap.yaml
 when@test:
-    silarhi_cap:
+    cap:
         enabled: false
 ```
 
@@ -74,7 +75,7 @@ use Silarhi\CapBundle\Form\CapType;
 
 $builder
     ->add('message', TextareaType::class)
-    ->add('cap', CapType::class);
+    ->add('captcha', CapType::class);
 ```
 
 `{{ form(form) }}` renders the widget and its script. On submit, the token is redeemed against your Cap server: a
@@ -86,8 +87,9 @@ Everything else is on **[cap-bundle.silarhi.dev](https://cap-bundle.silarhi.dev)
 
 - [Installation](https://cap-bundle.silarhi.dev/getting-started/installation/) and [configuration reference](https://cap-bundle.silarhi.dev/getting-started/configuration/)
 - The form type: [checkbox and invisible modes](https://cap-bundle.silarhi.dev/guides/form-type/), [labels and languages](https://cap-bundle.silarhi.dev/guides/translations/)
-- JavaScript: [without a build step, with Stimulus or your bundler](https://cap-bundle.silarhi.dev/guides/javascript/), [Turbo and SPAs](https://cap-bundle.silarhi.dev/guides/turbo/)
+- JavaScript: [without a build step, with Stimulus, Symfony Reprise or your bundler](https://cap-bundle.silarhi.dev/guides/javascript/), [Turbo and SPAs](https://cap-bundle.silarhi.dev/guides/turbo/)
 - [Self-hosting the widget](https://cap-bundle.silarhi.dev/guides/self-hosting/), [Content Security Policy](https://cap-bundle.silarhi.dev/guides/content-security-policy/)
+- [Migrating from reCAPTCHA](https://cap-bundle.silarhi.dev/guides/migrating-from-recaptcha/) (KarserRecaptcha3Bundle)
 - [JSON endpoints and DTOs](https://cap-bundle.silarhi.dev/guides/api/), [testing](https://cap-bundle.silarhi.dev/guides/testing/)
 
 ## Contributing

@@ -1,17 +1,20 @@
 {
     "name": "silarhi/cap-bundle",
-    "description": "Cap, the self-hosted proof-of-work CAPTCHA, for Symfony forms: a form type, a validator constraint and a Turbo-ready widget",
+    "description": "Cap CAPTCHA (trycap.dev) for Symfony forms: a self-hosted, proof-of-work reCAPTCHA alternative with a form type, a validator constraint and a Turbo-ready widget",
     "license": "MIT",
     "type": "symfony-bundle",
     "keywords": [
         "cap",
+        "cap-captcha",
         "captcha",
+        "captcha-alternative",
         "proof-of-work",
         "recaptcha",
         "symfony",
         "symfony-bundle",
         "symfony-form",
         "symfony-ux",
+        "trycap",
         "turbo",
         "stimulus"
     ],
@@ -29,6 +32,8 @@
     },
     "require": {
         "php": ">=8.2",
+        "psr/http-client": "^1.0.3",
+        "psr/http-factory": "^1.1",
         "symfony/config": "^6.4 || ^7.0 || ^8.0",
         "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
         "symfony/form": "^6.4 || ^7.0 || ^8.0",
@@ -39,6 +44,7 @@
     "require-dev": {
         "ergebnis/composer-normalize": "^2.54.0",
         "friendsofphp/php-cs-fixer": "^3.95.27",
+        "nyholm/psr7": "^1.8",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.3.2",
         "phpstan/phpstan-strict-rules": "^2.1.0",
@@ -55,6 +61,7 @@
         "twig/twig": "^3.0"
     },
     "suggest": {
+        "nyholm/psr7": "PSR-17 implementation that Symfony's psr18.http_client (the default HTTP client) needs, unless php-http/discovery finds another one",
         "symfony/asset": "Versions the URL of the bundle's script (bundles/silarhicap/cap.js) like your other assets",
         "symfony/framework-bundle": "Register Silarhi\\CapBundle\\SilarhiCapBundle for zero-config service wiring",
         "symfony/twig-bundle": "Renders the CapType widget: the bundle adds its form theme to twig.form_themes"

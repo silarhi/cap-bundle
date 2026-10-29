@@ -9,14 +9,18 @@ sidebar:
 
 - PHP 8.2+
 - Symfony 6.4, 7.x or 8.x, with `symfony/twig-bundle` to render the widget
+- A PSR-17 implementation for Symfony's PSR-18 client, such as `nyholm/psr7`, or your own
+  [PSR-18 client](/getting-started/configuration/#the-http-client)
 - A [Cap Standalone](https://trycap.dev/guide/standalone/) server reachable from your visitors' browsers, and a site
   key created in its dashboard: you get a **site key** and a **secret key**
 
 ## Installation
 
 ```bash
-composer require silarhi/cap-bundle
+composer require silarhi/cap-bundle nyholm/psr7
 ```
+
+Leave `nyholm/psr7` out if your application has a PSR-17 implementation already.
 
 Register the bundle if Flex did not:
 
@@ -51,9 +55,9 @@ CAP_SECRET_KEY=<the secret key of the site key>
 Disable the bundle in the test environment:
 
 ```yaml
-# config/packages/silarhi_cap.yaml
+# config/packages/cap.yaml
 when@test:
-    silarhi_cap:
+    cap:
         # No widget, every submission accepted: see the testing guide
         enabled: false
 ```
@@ -76,15 +80,15 @@ final class ContactType extends AbstractType
         $builder
             ->add('email', EmailType::class)
             ->add('message', TextareaType::class)
-            ->add('cap', CapType::class);
+            ->add('captcha', CapType::class);
     }
 }
 ```
 
 That's it:
 
-- `{{ form(form) }}` (or `{{ form_row(form.cap) }}`) renders Cap's checkbox and the script of the bundle;
-- the widget solves the challenge and posts the token as `contact[cap]`;
+- `{{ form(form) }}` (or `{{ form_row(form.captcha) }}`) renders Cap's checkbox and the script of the bundle;
+- the widget solves the challenge and posts the token as `contact[captcha]`;
 - `$form->isValid()` redeems the token against your Cap server. A missing or rejected token is an error on the
   field: _“Please verify you are human.”_ or _“The human verification failed, please try again.”_
 

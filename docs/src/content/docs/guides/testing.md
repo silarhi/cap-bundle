@@ -10,9 +10,9 @@ sidebar:
 Disable the bundle in the test environment:
 
 ```yaml
-# config/packages/silarhi_cap.yaml
+# config/packages/cap.yaml
 when@test:
-    silarhi_cap:
+    cap:
         enabled: false
 ```
 
@@ -21,25 +21,39 @@ token, and no request reaches a Cap server.
 
 ## Testing the protection itself
 
-Keep the bundle enabled in a dedicated environment and replace its HTTP client with a `MockHttpClient`:
+Keep the bundle enabled in a dedicated environment, and answer for the Cap server with the
+[`mock_response_factory`](https://symfony.com/doc/current/http_client.html#testing) of Symfony's HTTP client, which
+`psr18.http_client` wraps:
 
 ```yaml
-# config/packages/silarhi_cap.yaml
+# config/packages/cap.yaml
 when@test_cap:
-    silarhi_cap:
-        http_client: 'test.cap_client'
+    framework:
+        http_client:
+            mock_response_factory: App\Tests\CapServerMock
     services:
-        test.cap_client:
-            class: Symfony\Component\HttpClient\MockHttpClient
+        App\Tests\CapServerMock:
             public: true
 ```
 
 ```php
-use Symfony\Component\HttpClient\MockHttpClient;
+namespace App\Tests;
+
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 
-static::getContainer()->get('test.cap_client')
-    ->setResponseFactory(new JsonMockResponse(['success' => false, 'error' => 'Token expired'], ['http_code' => 403]));
+final class CapServerMock
+{
+    public array $answer = ['success' => true];
+
+    public function __invoke(string $method, string $url, array $options): JsonMockResponse
+    {
+        return new JsonMockResponse($this->answer, ['http_code' => $this->answer['success'] ? 200 : 403]);
+    }
+}
+```
+
+```php
+static::getContainer()->get(CapServerMock::class)->answer = ['success' => false, 'error' => 'Token expired'];
 ```
 
 Or mock `CapVerifierInterface` in a unit test of your own service.

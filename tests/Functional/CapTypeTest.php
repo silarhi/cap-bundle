@@ -17,7 +17,9 @@ use function is_string;
 
 use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Silarhi\CapBundle\Form\CapMode;
 use Silarhi\CapBundle\Form\CapType;
+use Silarhi\CapBundle\Tests\Fixtures\CapServerMock;
 use Silarhi\CapBundle\Tests\Fixtures\TestKernel;
 use Silarhi\CapBundle\Validator\Cap;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -26,8 +28,6 @@ use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
-use Symfony\Component\HttpClient\MockHttpClient;
-use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -38,9 +38,6 @@ use Twig\Environment;
 
 final class CapTypeTest extends KernelTestCase
 {
-    /** @var list<array{url: string, body: string}> */
-    private array $requests = [];
-
     /**
      * @param array<mixed> $options
      */
@@ -111,7 +108,7 @@ final class CapTypeTest extends KernelTestCase
     {
         self::bootKernel();
 
-        $crawler = $this->render($this->createForm(['mode' => CapType::MODE_INVISIBLE]));
+        $crawler = $this->render($this->createForm(['mode' => CapMode::Invisible]));
         $input = $crawler->filter('input[name="form[cap]"]');
 
         self::assertCount(0, $crawler->filter('cap-widget'));
@@ -121,6 +118,15 @@ final class CapTypeTest extends KernelTestCase
         self::assertSame('https://cap.example.com/site-key/', $input->attr('data-cap-api-endpoint'));
         self::assertNull($input->attr('required'));
         self::assertCount(1, $crawler->filter('script[type="module"]'));
+    }
+
+    public function testAcceptsTheModeAsAString(): void
+    {
+        self::bootKernel();
+
+        $crawler = $this->render($this->createForm(['mode' => 'invisible']));
+
+        self::assertSame('invisible', $crawler->filter('input[name="form[cap]"]')->attr('data-silarhi-cap'));
     }
 
     public function testRejectsAnUnknownMode(): void
@@ -144,7 +150,7 @@ final class CapTypeTest extends KernelTestCase
         self::assertSame([[
             'url' => 'https://cap.example.com/site-key/siteverify',
             'body' => '{"secret":"secret","response":"site-key:abc:def"}',
-        ]], $this->requests);
+        ]], $this->capServer()->requests);
     }
 
     /**
@@ -208,7 +214,7 @@ final class CapTypeTest extends KernelTestCase
         $form = $this->createForm();
         $form->submit(['name' => 'Jane']);
         self::assertTrue($form->isValid());
-        self::assertSame([], $this->requests);
+        self::assertSame([], $this->capServer()->requests);
     }
 
     public function testCustomConfiguration(): void
@@ -227,7 +233,7 @@ final class CapTypeTest extends KernelTestCase
         $form = $this->createForm();
         $form->submit(['name' => 'Jane', 'cap' => 'site-key:abc:def']);
         self::assertTrue($form->isValid());
-        self::assertSame('http://cap:3000/site-key/siteverify', $this->requests[0]['url'] ?? null);
+        self::assertSame('http://cap:3000/site-key/siteverify', $this->capServer()->requests[0]['url'] ?? null);
     }
 
     public function testReadsTheEndpointAndTheSecretKeyFromEnvVarsByDefault(): void
@@ -248,7 +254,7 @@ final class CapTypeTest extends KernelTestCase
             self::assertSame([[
                 'url' => 'https://cap.example.com/env-key/siteverify',
                 'body' => '{"secret":"env-secret","response":"env-key:abc:def"}',
-            ]], $this->requests);
+            ]], $this->capServer()->requests);
         } finally {
             unset($_SERVER['CAP_ENDPOINT'], $_SERVER['CAP_SECRET_KEY']);
         }
@@ -298,14 +304,14 @@ final class CapTypeTest extends KernelTestCase
      */
     private function mockCapServer(array $answer): void
     {
-        $client = self::getContainer()->get('test.cap_http_client');
-        self::assertInstanceOf(MockHttpClient::class, $client);
+        $this->capServer()->answer($answer);
+    }
 
-        $client->setResponseFactory(function (string $method, string $url, array $options) use ($answer): JsonMockResponse {
-            $body = $options['body'] ?? '';
-            $this->requests[] = ['url' => $url, 'body' => is_string($body) ? $body : ''];
+    private function capServer(): CapServerMock
+    {
+        $server = self::getContainer()->get('test.cap_server');
+        self::assertInstanceOf(CapServerMock::class, $server);
 
-            return new JsonMockResponse($answer, ['http_code' => true === ($answer['success'] ?? null) ? 200 : 404]);
-        });
+        return $server;
     }
 }

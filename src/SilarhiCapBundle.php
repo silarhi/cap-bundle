@@ -34,6 +34,9 @@ use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 final class SilarhiCapBundle extends AbstractBundle
 {
+    /** The configuration key: `cap:` rather than the `silarhi_cap:` derived from the class name. */
+    protected string $extensionAlias = 'cap';
+
     /** The cap-widget release the bundle's script loads by default, from jsDelivr. */
     public const WIDGET_SCRIPT = 'https://cdn.jsdelivr.net/npm/cap-widget@0.1.58';
 
@@ -62,9 +65,16 @@ final class SilarhiCapBundle extends AbstractBundle
                     ->info('false renders no widget and accepts every submission: for the test environment.')
                 ->end()
                 ->scalarNode('http_client')
-                    ->defaultValue('http_client')
-                    ->cannotBeEmpty()
-                    ->info('The HTTP client service calling /siteverify: a scoped client to set a timeout or a proxy.')
+                    ->defaultNull()
+                    ->info('PSR-18 HTTP client service ID calling /siteverify. Defaults to Symfony\'s psr18.http_client.')
+                ->end()
+                ->scalarNode('request_factory')
+                    ->defaultNull()
+                    ->info('PSR-17 request factory service ID. Defaults to the HTTP client (psr18.http_client is one).')
+                ->end()
+                ->scalarNode('stream_factory')
+                    ->defaultNull()
+                    ->info('PSR-17 stream factory service ID. Defaults to the HTTP client (psr18.http_client is one).')
                 ->end()
                 ->booleanNode('render_scripts')
                     ->defaultTrue()
@@ -120,30 +130,37 @@ final class SilarhiCapBundle extends AbstractBundle
          *     secret_key: string,
          *     verify_url: string|null,
          *     enabled: bool,
-         *     http_client: string,
+         *     http_client: string|null,
+         *     request_factory: string|null,
+         *     stream_factory: string|null,
          *     render_scripts: bool,
          *     widget: array{script: string|null, wasm_url: string|null, hashwx_url: string|null},
          * } $config */
         $services = $container->services();
 
+        // FrameworkBundle registers psr18.http_client when symfony/http-client and psr/http-client are installed
+        $httpClient = $config['http_client'] ?? 'psr18.http_client';
+
         // The endpoint is often an env var: its trailing slash can only be normalized at runtime
-        $services->set('silarhi_cap.verifier', CapVerifier::class)
+        $services->set('cap.verifier', CapVerifier::class)
             ->factory([CapVerifier::class, 'fromEndpoint'])
             ->args([
                 $config['endpoint'],
                 $config['secret_key'],
                 $config['verify_url'],
-                service($config['http_client'])->ignoreOnInvalid(),
+                service($httpClient),
+                service($config['request_factory'] ?? $httpClient),
+                service($config['stream_factory'] ?? $httpClient),
                 service('logger')->ignoreOnInvalid(),
             ])
             ->tag('monolog.logger', ['channel' => 'cap']);
-        $services->alias(CapVerifierInterface::class, 'silarhi_cap.verifier');
+        $services->alias(CapVerifierInterface::class, 'cap.verifier');
 
-        $services->set('silarhi_cap.validator', CapValidator::class)
-            ->args([service('silarhi_cap.verifier'), $config['enabled']])
+        $services->set('cap.validator', CapValidator::class)
+            ->args([service('cap.verifier'), $config['enabled']])
             ->tag('validator.constraint_validator');
 
-        $services->set('silarhi_cap.form_type', CapType::class)
+        $services->set('cap.form_type', CapType::class)
             ->args([
                 $config['endpoint'],
                 $config['enabled'],

@@ -10,8 +10,8 @@ WebAssembly solver from jsDelivr when it solves. Your Cap server can serve both:
 `ENABLE_ASSETS_SERVER=true` (see Cap's [asset server](https://trycap.dev/guide/standalone/options#asset-server)).
 
 ```yaml
-# config/packages/silarhi_cap.yaml
-silarhi_cap:
+# config/packages/cap.yaml
+cap:
     endpoint: 'https://cap.example.com/%env(CAP_SITE_KEY)%/'
     secret_key: '%env(CAP_SECRET_KEY)%'
     widget:

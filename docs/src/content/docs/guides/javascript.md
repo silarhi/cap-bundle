@@ -24,15 +24,15 @@ It works with Webpack Encore, AssetMapper, or no front-end tooling at all, as lo
 
 ## With Stimulus
 
-StimulusBundle (Webpack Encore or AssetMapper) registers the `silarhi--cap-bundle--cap` controller that every
-`CapType` carries. It is lazy: the controller, and the `cap-widget` package it imports, only load on pages with a
+StimulusBundle (Webpack Encore or AssetMapper) or Symfony Reprise (Vite or Rsbuild) registers the
+`silarhi--cap-bundle--cap` controller that every `CapType` carries. It is lazy: the controller, and the `cap-widget` package it imports, only load on pages with a
 protected form.
 
 Turn off the script of the bundle:
 
 ```yaml
-# config/packages/silarhi_cap.yaml
-silarhi_cap:
+# config/packages/cap.yaml
+cap:
     render_scripts: false
 ```
 
@@ -63,6 +63,46 @@ to `assets/controllers.json`; install them with `cap-widget`:
 pnpm add -D cap-widget
 pnpm install
 ```
+
+### Symfony Reprise (Vite, Rsbuild)
+
+[Symfony Reprise](https://github.com/symfony/reprise) reads the same `controllers.json`. Flex adds
+`"@silarhi/cap-bundle": "file:vendor/silarhi/cap-bundle/assets"` to your `package.json` and the controller to
+`assets/controllers.json`; install them with `cap-widget`:
+
+```bash
+pnpm add -D cap-widget @hotwired/stimulus
+pnpm install
+```
+
+Point the plugin to `controllers.json`, and start Stimulus from your entry point:
+
+```js
+// vite.config.js
+import Symfony from '@symfony/reprise/vite'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+    plugins: [Symfony({ stimulus: 'assets/controllers.json' })],
+    build: {
+        rollupOptions: {
+            input: { app: './assets/app.js' },
+        },
+    },
+})
+```
+
+```js
+// assets/app.js
+import { startStimulusApp } from '@symfony/reprise/stimulus'
+
+startStimulusApp()
+```
+
+Vite builds the controller and `cap-widget` into their own chunks, loaded the first time a page shows a protected
+form, in production builds as with the dev server. To put your Content-Security-Policy nonce on the tags Reprise
+renders, use its `RenderAssetTagEvent`; the `csp_nonce` option of `CapType` still covers the styles of the widget
+(see [Content Security Policy](/guides/content-security-policy/)).
 
 The controller has two actions: `solve` (solve now) and `reset` (forget the token), e.g.
 `data-action="click->silarhi--cap-bundle--cap#solve"`.

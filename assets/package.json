@@ -33,7 +33,9 @@
         "./controller": {
             "types": "./dist/controller.d.ts",
             "import": "./dist/controller.js"
-        }
+        },
+        "./dist/*": "./dist/*",
+        "./package.json": "./package.json"
     },
     "symfony": {
         "controllers": {
