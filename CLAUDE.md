@@ -13,8 +13,8 @@ Stimulus or no build step at all.
 
 - **Language**: PHP 8.2+, TypeScript (`assets/`)
 - **Framework**: Symfony 6.4 / 7.x / 8.x (`symfony/form`, `symfony/validator`), PSR-18 / PSR-17 for `/siteverify`
-  (Symfony's `psr18.http_client` by default, which needs `symfony/http-client` and a PSR-17 implementation, both
-  suggested only)
+  (Symfony's `psr18.http_client` by default, which needs `symfony/http-client` and a PSR-17 implementation:
+  `php-http/discovery` installs both when the application has none)
 - **Optional**: `symfony/twig-bundle` (form theme), `symfony/asset` (versioned script URL), StimulusBundle
 - **JavaScript**: `@hotwired/stimulus` (optional peer); `cap-widget` and `@cap.js/wasm` are dev dependencies the build
   copies to `public/widget/`; built with tsdown, tested with Vitest and Playwright
@@ -26,7 +26,6 @@ src/
 ├── Form/CapType.php         # The field: view vars, options (mode, locale, worker_count, troubleshooting_url, i18n, csp_nonce)
 ├── Form/CapMode.php         # Enum of the mode option (Checkbox, Invisible); CapType's normalizer also takes its values
 ├── Validator/               # Cap constraint (#[Cap]) and CapValidator (enabled: false accepts everything)
-├── DependencyInjection/     # Psr17FactoryPass (@internal): psr18.http_client needs PSR-17 factories
 ├── Verifier/                # CapVerifierInterface, CapVerifier (PSR-18 client + PSR-17 factories, never throws),
 │                            #   VerificationResult
 └── SilarhiCapBundle.php     # `cap:` configuration tree (extensionAlias), `cap.*` services, prepends the form theme
@@ -50,7 +49,7 @@ assets/
 └── test/                    # Vitest (jsdom) with fake <cap-widget> and Cap
 public/cap.js                # Built, committed: assets:install copies public/ to public/bundles/silarhicap/
 public/widget/               # Built, committed: cap.min.js, cap_wasm_bg.wasm, hashwx.wasm, their LICENSE
-tests/                       # PHPUnit: Verifier/, Validator/, DependencyInjection/ unit tests, Functional/ (TestKernel per environment:
+tests/                       # PHPUnit: Verifier/, Validator/ unit tests, Functional/ (TestKernel per environment:
                              #   test, disabled, custom)
 ```
 
@@ -119,13 +118,15 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   them the build fails with "cannot find @silarhi/cap-bundle/package.json".
 - **Fails closed**: `CapVerifier::verify()` never throws; transport, 5xx and non-JSON answers are failed verifications.
 - **PSR-18 like picasso-bundle**: `http_client` (default `psr18.http_client`), `request_factory` and `stream_factory`
-  (default: the client, which `Psr18Client` also is). The `require` stays minimal: `symfony/http-client` and its
-  PSR-17 implementation (`nyholm/psr7`) are only suggested, as in picasso-bundle, and `loadExtension()` throws a
-  `LogicException` naming them when `http_client` is null and `Psr18Client` does not exist. `Psr18Client` also throws
-  when it has no PSR-17 factories, which would only show on the first submitted form: `loadExtension()` sets the
-  build-only `.cap.default_http_client` parameter, and `Psr17FactoryPass` (a pass: the extension cannot see other
-  services) fails the build when the container has no `ResponseFactoryInterface` + `StreamFactoryInterface` services
-  and neither `Http\Discovery\Psr17Factory` nor Nyholm's factory exists, the fallbacks of `Psr18Client`. Tests go through the real chain: `framework.http_client.mock_response_factory`
+  (default: the client, which `Psr18Client` also is). No implementation is required: the bundle requires
+  `php-http/discovery` and the `psr/http-client-implementation` / `psr/http-factory-implementation` virtual packages,
+  like openai-php/client or knplabs/github-api. Its Composer plugin (allowed by symfony/skeleton) installs
+  `symfony/http-client` and `nyholm/psr7` when nothing provides them, so a bare `composer require` works and apps
+  with Guzzle keep it. `php-http/discovery` provides both virtual packages itself, so Composer resolves without the
+  plugin (`plugin-optional`): then nothing is installed, and `loadExtension()` throws a `LogicException` naming
+  `symfony/http-client` when `http_client` is null and `Psr18Client` does not exist. Symfony checks PSR-17 only at
+  runtime (`Psr18Client` falls back to `Http\Discovery\Psr17Factory`): do not add a build-time PSR-17 check. The
+  bundle's own `composer.json` sets `allow-plugins.php-http/discovery: false`, its dev dependencies provide both. Tests go through the real chain: `framework.http_client.mock_response_factory`
   (`tests/Fixtures/CapServerMock.php`).
 - Optional services (`assets.packages`, `request_stack`, `logger`) are injected with `ignoreOnInvalid()`.
 

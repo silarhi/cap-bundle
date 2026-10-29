@@ -32,8 +32,11 @@
     },
     "require": {
         "php": ">=8.2",
+        "php-http/discovery": "^1.19",
         "psr/http-client": "^1.0.3",
+        "psr/http-client-implementation": "^1.0",
         "psr/http-factory": "^1.1",
+        "psr/http-factory-implementation": "^1.0",
         "symfony/config": "^6.4 || ^7.0 || ^8.0",
         "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
         "symfony/form": "^6.4 || ^7.0 || ^8.0",
@@ -62,7 +65,6 @@
         "twig/twig": "^3.0"
     },
     "suggest": {
-        "nyholm/psr7": "PSR-17 implementation that Symfony's psr18.http_client (the default HTTP client) needs, unless php-http/discovery finds another one",
         "symfony/asset": "Versions the URL of the bundle's script (bundles/silarhicap/cap.js) like your other assets",
         "symfony/framework-bundle": "Register Silarhi\\CapBundle\\SilarhiCapBundle for zero-config service wiring",
         "symfony/http-client": "Provides Symfony's psr18.http_client, the default HTTP client calling /siteverify, unless cap.http_client is set",
@@ -82,6 +84,7 @@
     "config": {
         "allow-plugins": {
             "ergebnis/composer-normalize": true,
+            "php-http/discovery": false,
             "phpstan/extension-installer": true
         },
         "audit": {
