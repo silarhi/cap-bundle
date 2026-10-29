@@ -1,7 +1,8 @@
 // src/core.ts
 /**
-* Glue between CapType and the Cap widget, for full page loads, Turbo Drive, Turbo Frames and any other way a form
-* reaches the page: listeners delegated to the document, so there is nothing to mount or unmount per form.
+* Glue between CapType and the Cap widget, whatever brings the form to the page (a full page load, Turbo, htmx, any
+* SPA): listeners delegated to the document, so there is nothing to mount or unmount per form. Nothing here knows a
+* framework: the adapters (adapters/) add what one needs, such as forgetting the tokens Turbo submitted.
 */
 /** The elements CapType renders: `data-silarhi-cap="checkbox"` on a `<cap-widget>`, `"invisible"` on a hidden input. */
 const SELECTOR = "[data-silarhi-cap]";
@@ -22,8 +23,6 @@ function install() {
 	registry[INSTALLED] = true;
 	document.addEventListener("submit", onSubmit, true);
 	document.addEventListener("focusin", onFocusIn);
-	document.addEventListener("turbo:submit-end", onSubmitEnd);
-	document.addEventListener("turbo:before-cache", () => reset(document));
 	window.addEventListener("pageshow", (event) => {
 		if (event.persisted) reset(document);
 	});
@@ -48,8 +47,8 @@ async function solve(target) {
 	return (await Promise.all(fieldsOf(target).map(solveField))).every(Boolean);
 }
 /**
-* Forgets the tokens of a form, a field or the whole document. Turbo resets them for you; call it after submitting a
-* form with fetch() yourself and keeping it on the page, as a token is single-use.
+* Forgets the tokens of a form, a field or the whole document. The Turbo adapter resets them for you; call it after
+* submitting a form with fetch() yourself and keeping it on the page, as a token is single-use.
 */
 function reset(target) {
 	for (const field of fieldsOf(target)) if (isInvisible(field)) {
@@ -160,8 +159,5 @@ function onFocusIn(event) {
 	const form = event.target instanceof Element ? event.target.closest("form") : null;
 	if (!form) return;
 	for (const field of fieldsOf(form)) if (isInvisible(field) && !hasToken(field)) solveField(field);
-}
-function onSubmitEnd(event) {
-	if (event.target instanceof HTMLFormElement) reset(event.target);
 }
 export { solve as a, reset as i, configure as n, install as r, SELECTOR as t };

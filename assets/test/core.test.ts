@@ -1,95 +1,13 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { configure, install, reset, solve } from '../src/core'
-
-/** Stands in for Cap's <cap-widget>: solve() succeeds with "token-<n>" unless `fail` is set. */
-class FakeWidget extends HTMLElement {
-    static fail = false
-    static solves = 0
-    token: string | null = null
-
-    async solve() {
-        const solve = ++FakeWidget.solves
-        await Promise.resolve()
-        if (FakeWidget.fail) {
-            this.dispatchEvent(new CustomEvent('error', { detail: { message: 'failed' } }))
-            return undefined
-        }
-        this.token = `token-${solve}`
-        this.dispatchEvent(new CustomEvent('solve', { detail: { token: this.token } }))
-        return { success: true, token: this.token }
-    }
-
-    reset() {
-        this.token = null
-        this.dispatchEvent(new CustomEvent('reset'))
-    }
-}
-
-/** Stands in for Cap's programmatic mode, backed by a FakeWidget like the real one. */
-class FakeCap {
-    static configs: Array<Record<string, string>> = []
-    readonly widget: FakeWidget
-
-    constructor(config: Record<string, string>) {
-        FakeCap.configs.push(config)
-        this.widget = document.createElement('cap-widget') as FakeWidget
-        document.documentElement.appendChild(this.widget)
-    }
-
-    get token() {
-        return this.widget.token
-    }
-
-    solve() {
-        return this.widget.solve()
-    }
-
-    reset() {
-        this.widget.reset()
-    }
-
-    addEventListener(type: string, listener: EventListener) {
-        this.widget.addEventListener(type, listener)
-    }
-}
-
-/** Resolves once the form reaches its own submit listeners, i.e. once Cap let it through. */
-function submitted(form: HTMLFormElement): Promise<SubmitEvent> {
-    return new Promise((resolve) => {
-        form.addEventListener(
-            'submit',
-            (event) => {
-                event.preventDefault()
-                resolve(event)
-            },
-            { once: true }
-        )
-    })
-}
-
-function render(html: string): HTMLFormElement {
-    document.body.innerHTML = html
-    return document.querySelector('form') as HTMLFormElement
-}
+import { defineFakes, FakeCap, FakeWidget, render, resetFakes, submitted } from './fakes'
 
 beforeAll(() => {
-    customElements.define('cap-widget', FakeWidget)
-    ;(window as unknown as { Cap: typeof FakeCap }).Cap = FakeCap
+    defineFakes()
     install()
 })
 
-beforeEach(() => {
-    FakeWidget.fail = false
-    FakeWidget.solves = 0
-    FakeCap.configs = []
-})
-
-afterEach(() => {
-    document.body.innerHTML = ''
-    for (const widget of document.documentElement.querySelectorAll(':scope > cap-widget')) {
-        widget.remove()
-    }
-})
+afterEach(resetFakes)
 
 describe('invisible challenge', () => {
     const html = `<form>
@@ -149,21 +67,13 @@ describe('invisible challenge', () => {
         expect(new FormData(form).get('contact[cap]')).toBe('')
     })
 
-    it('forgets the token Turbo submitted', async () => {
+    it('leaves Turbo events to the Turbo adapter', async () => {
         const form = render(html)
         await solve(form)
-        expect(new FormData(form).get('contact[cap]')).toBe('token-1')
 
         form.dispatchEvent(new CustomEvent('turbo:submit-end', { bubbles: true }))
-        expect(new FormData(form).get('contact[cap]')).toBe('')
-    })
-
-    it('keeps no token in the page Turbo caches', async () => {
-        const form = render(html)
-        await solve(form)
-
         document.dispatchEvent(new CustomEvent('turbo:before-cache'))
-        expect(new FormData(form).get('contact[cap]')).toBe('')
+        expect(new FormData(form).get('contact[cap]')).toBe('token-1')
     })
 
     it('clears the token when Cap expires it', async () => {

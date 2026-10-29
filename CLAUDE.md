@@ -32,8 +32,12 @@ templates/form/cap_widget.html.twig  # silarhi_cap_widget block: <cap-widget> or
 translations/                # validators.<locale>.xlf: cap.validation.missing / cap.validation.invalid (keys, not
                              #   English sentences: the translator is needed)
 assets/
-├── src/core.ts              # install(), configure(), solve(), reset(): listeners delegated to the document
-├── src/controller.ts        # Stimulus controller (silarhi--cap-bundle--cap): configure + install + import('cap-widget')
+├── src/core.ts              # install(), configure(), solve(), reset(): listeners delegated to the document. Knows
+│                            #   no framework: anything Turbo-specific (or htmx...) goes in an adapter
+├── src/controller.ts        # Stimulus controller (silarhi--cap-bundle--cap): configure + install + adapters +
+│                            #   import('cap-widget')
+├── src/adapters/            # Opt-in framework adapters: turbo.ts (installTurbo), index.ts (installAdapters reads
+│                            #   data-silarhi-cap-adapters, from the cap.adapters configuration)
 ├── src/auto.ts              # Built to public/cap.js: install + loads widget.script after configure()
 ├── src/index.ts             # npm entry (@silarhi/cap-bundle)
 ├── dist/                    # Built, committed: StimulusBundle, AssetMapper and bundlers read it
@@ -78,6 +82,9 @@ pnpm build                                  # commit assets/dist and public/cap.
 inline-block }`, which beats the `hidden` attribute, and inline styles break strict CSPs. The input is solved with
   Cap's programmatic mode (`new Cap()`), whose hidden widget lives on `<html>`: `createInvisibleCap()` removes those
   of inputs no longer in the page.
+- **Framework-agnostic core, opt-in adapters.** `core.ts` only uses the DOM and browser events. A framework's needs
+  live in `adapters/<name>.ts` (an idempotent `install<Name>()`, its own `Symbol.for()` guard), registered by name in
+  `adapters/index.ts` and in the `enumPrototype()` of `cap.adapters`, exported as `@silarhi/cap-bundle/<name>`.
 - **Delegation, not lifecycles.** `install()` adds one capture-phase `submit` listener to the document: it sees forms
   Turbo Drive, Turbo Frames or any SPA inserted, before Turbo and the application's listeners. It stops the event,
   solves, then `requestSubmit(submitter)`. A failed solve submits all the same (once, through `bypassedForms`) so that
@@ -85,7 +92,8 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   module (public/cap.js and an application bundle).
 - **`solve()` returns at once while a solve is running** (the visitor clicked): `solveWidget()` waits for the widget's
   `solve` / `error` events instead of the promise.
-- **Tokens are single-use**: they are cleared on `turbo:submit-end`, `turbo:before-cache` and a bfcache `pageshow`.
+- **Tokens are single-use**: the core clears them on a bfcache `pageshow`; the Turbo adapter on `turbo:submit-end`
+  and `turbo:before-cache`.
 - **Script loading**: the form renders `<script type="module" src="/bundles/silarhicap/cap.js">`. Modules run once per
   page however many times they are inserted (Turbo re-inserts body scripts on each visit). It imports `widget.script`
   itself, after `configure()`, because the widget reads `window.CAP_CSS_NONCE` when it connects.

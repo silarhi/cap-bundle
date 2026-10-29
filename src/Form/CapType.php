@@ -39,11 +39,12 @@ final class CapType extends AbstractType
     public const SCRIPT_PATH = 'bundles/silarhicap/cap.js';
 
     /**
-     * @param string      $endpoint      the API endpoint of the site key, e.g. https://cap.example.com/<site-key>/
-     * @param bool        $enabled       false renders nothing (and the validator accepts everything)
-     * @param bool        $renderScripts renders the <script> of the bundle next to the widget
-     * @param string|null $widgetScript  URL of the cap-widget script, loaded by the bundle's script; null when the
-     *                                   application imports cap-widget itself
+     * @param string       $endpoint      the API endpoint of the site key, e.g. https://cap.example.com/<site-key>/
+     * @param bool         $enabled       false renders nothing (and the validator accepts everything)
+     * @param bool         $renderScripts renders the <script> of the bundle next to the widget
+     * @param string|null  $widgetScript  URL of the cap-widget script, loaded by the bundle's script; null when the
+     *                                    application imports cap-widget itself
+     * @param list<string> $adapters      the JavaScript adapters to install, e.g. ["turbo"]
      */
     public function __construct(
         private readonly string $endpoint,
@@ -52,6 +53,7 @@ final class CapType extends AbstractType
         private readonly ?string $widgetScript = null,
         private readonly ?string $wasmUrl = null,
         private readonly ?string $hashwxUrl = null,
+        private readonly array $adapters = [],
         private readonly ?Packages $packages = null,
         private readonly ?RequestStack $requestStack = null,
     ) {
@@ -72,6 +74,7 @@ final class CapType extends AbstractType
         $view->vars['csp_nonce'] = $options['csp_nonce'];
         $view->vars['wasm_url'] = $this->wasmUrl;
         $view->vars['hashwx_url'] = $this->hashwxUrl;
+        $view->vars['adapters'] = [] === $this->adapters ? null : implode(' ', $this->adapters);
         $view->vars['widget_script'] = $this->renderScripts ? $this->widgetScript : null;
         $view->vars['script_url'] = $this->renderScripts
             ? ($this->packages?->getUrl(self::SCRIPT_PATH) ?? '/' . self::SCRIPT_PATH)

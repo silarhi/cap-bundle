@@ -67,6 +67,7 @@ final class CapTypeTest extends KernelTestCase
         self::assertSame('fr', $widget->attr('data-cap-lang'));
         self::assertSame('https://cdn.jsdelivr.net/npm/cap-widget@0.1.58', $widget->attr('data-silarhi-cap-script'));
         self::assertNull($widget->attr('data-silarhi-cap-wasm-url'));
+        self::assertNull($widget->attr('data-silarhi-cap-adapters'), 'Adapters are opt-in');
         self::assertNull($widget->attr('data-cap-worker-count'));
         self::assertCount(0, $crawler->filter('label'));
 
@@ -229,6 +230,7 @@ final class CapTypeTest extends KernelTestCase
         self::assertNull($widget->attr('data-silarhi-cap-script'));
         self::assertSame('/cap/cap_wasm_bg.wasm', $widget->attr('data-silarhi-cap-wasm-url'));
         self::assertSame('/cap/hashwx.wasm', $widget->attr('data-silarhi-cap-hashwx-url'));
+        self::assertSame('turbo', $widget->attr('data-silarhi-cap-adapters'));
 
         $form = $this->createForm();
         $form->submit(['name' => 'Jane', 'cap' => 'site-key:abc:def']);

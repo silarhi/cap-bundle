@@ -36,7 +36,8 @@
 
 - **One form field**: `CapType` renders the widget and validates the token on submit, with the `Cap` constraint
 - **Checkbox or invisible**: Cap's widget, or nothing at all: the challenge is solved while the visitor fills the form
-- **SPA ready**: Turbo Drive, Turbo Frames, the Turbo cache, the back-forward cache and forms you submit with `fetch()`
+- **SPA ready**: a framework-agnostic core for any SPA, the back-forward cache and forms you submit with `fetch()`,
+  plus an opt-in Turbo adapter for Turbo Drive's cache and submissions
 - **Stimulus or not**: a controller StimulusBundle or Symfony Reprise registers for you, or a script the form renders, with no build step
 - **Self-hosted end to end**: your Cap server, and the widget script and its WebAssembly solver from your domain if you like
 - **Fails closed**: a Cap server out of reach rejects the submission, and the error stays on the field
