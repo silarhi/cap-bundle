@@ -29,6 +29,9 @@ or from the form type:
 $builder->add('captcha', CapType::class, ['csp_nonce' => $this->nonceGenerator->getNonce()]);
 ```
 
+With [Symfony Reprise](/guides/javascript/#symfony-reprise-vite-rsbuild), put the nonce on the tags it renders with
+its `RenderAssetTagEvent`, and still pass it to `CapType` for the widget.
+
 The nonce goes on the `<script>` of the bundle, and to `window.CAP_CSS_NONCE` and `window.CAP_SCRIPT_NONCE`, which the
 widget puts on the `<style>` and the scripts it injects: the decompression fallback, and the script of the sandboxed
 `srcdoc` iframe that runs Cap's [instrumentation challenges](https://trycap.dev/guide/instrumentation). With Turbo Drive the policy of the first page stays in force

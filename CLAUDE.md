@@ -21,6 +21,7 @@ Stimulus or no build step at all.
 ```
 src/
 ├── Form/CapType.php         # The field: view vars, options (mode, locale, worker_count, troubleshooting_url, i18n, csp_nonce)
+├── Form/CapMode.php         # Enum of the mode option (Checkbox, Invisible); CapType's normalizer also takes its values
 ├── Validator/               # Cap constraint (#[Cap]) and CapValidator (enabled: false accepts everything)
 ├── Verifier/                # CapVerifierInterface, CapVerifier (HTTP client, never throws), VerificationResult
 └── SilarhiCapBundle.php     # `cap:` configuration tree (extensionAlias), `cap.*` services, prepends the form theme
@@ -89,6 +90,9 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   so a fresh `composer require` (no Flex recipe) does not break `cache:clear`. As they may be env placeholders, their
   trailing slash is normalized at runtime (`CapVerifier::fromEndpoint()`, `CapType::buildView()`), never in
   `loadExtension()`.
+- **`exports` of `assets/package.json` keep `./package.json` and `./dist/*`**: Symfony Reprise and
+  `@symfony/stimulus-bridge` resolve `<package>/package.json`, then `<package>/<main of the controller>`; without
+  them the build fails with "cannot find @silarhi/cap-bundle/package.json".
 - **Fails closed**: `CapVerifier::verify()` never throws; transport, 5xx and non-JSON answers are failed verifications.
 - Optional services (`assets.packages`, `request_stack`, `logger`, the HTTP client) are injected with
   `ignoreOnInvalid()`: `CapVerifier` falls back to `HttpClient::create()`.

@@ -37,7 +37,7 @@
 - **One form field**: `CapType` renders the widget and validates the token on submit, with the `Cap` constraint
 - **Checkbox or invisible**: Cap's widget, or nothing at all: the challenge is solved while the visitor fills the form
 - **SPA ready**: Turbo Drive, Turbo Frames, the Turbo cache, the back-forward cache and forms you submit with `fetch()`
-- **Stimulus or not**: a controller StimulusBundle registers for you, or a script the form renders, with no build step
+- **Stimulus or not**: a controller StimulusBundle or Symfony Reprise registers for you, or a script the form renders, with no build step
 - **Self-hosted end to end**: your Cap server, and the widget script and its WebAssembly solver from your domain if you like
 - **Fails closed**: a Cap server out of reach rejects the submission, and the error stays on the field
 - **Any payload**: the `#[Cap]` constraint and the `CapVerifierInterface` service protect JSON endpoints too
@@ -86,7 +86,7 @@ Everything else is on **[cap-bundle.silarhi.dev](https://cap-bundle.silarhi.dev)
 
 - [Installation](https://cap-bundle.silarhi.dev/getting-started/installation/) and [configuration reference](https://cap-bundle.silarhi.dev/getting-started/configuration/)
 - The form type: [checkbox and invisible modes](https://cap-bundle.silarhi.dev/guides/form-type/), [labels and languages](https://cap-bundle.silarhi.dev/guides/translations/)
-- JavaScript: [without a build step, with Stimulus or your bundler](https://cap-bundle.silarhi.dev/guides/javascript/), [Turbo and SPAs](https://cap-bundle.silarhi.dev/guides/turbo/)
+- JavaScript: [without a build step, with Stimulus, Symfony Reprise or your bundler](https://cap-bundle.silarhi.dev/guides/javascript/), [Turbo and SPAs](https://cap-bundle.silarhi.dev/guides/turbo/)
 - [Self-hosting the widget](https://cap-bundle.silarhi.dev/guides/self-hosting/), [Content Security Policy](https://cap-bundle.silarhi.dev/guides/content-security-policy/)
 - [Migrating from reCAPTCHA](https://cap-bundle.silarhi.dev/guides/migrating-from-recaptcha/) (KarserRecaptcha3Bundle)
 - [JSON endpoints and DTOs](https://cap-bundle.silarhi.dev/guides/api/), [testing](https://cap-bundle.silarhi.dev/guides/testing/)
