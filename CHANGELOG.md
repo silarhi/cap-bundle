@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - Unreleased
+
+### Added
+
+- The Live Components adapter (`adapters: [live]`, or `installLive()` from `@silarhi/cap-bundle/live`): it keeps the
+  challenge out of Live Component re-renders and sends its token with the action only. `ComponentWithFormTrait`
+  validates the form on every re-render, which would redeem the token.
+
+### Fixed
+
+- `CapValidator` is reset between the requests of long-running workers (FrankenPHP, RoadRunner).
+
 ## [0.1.0] - 2026-10-29
 
 ### Added
@@ -20,10 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   invisible one as soon as the visitor focuses the form. Tokens are forgotten when the back-forward cache restores a
   page.
 - Opt-in JavaScript adapters (`adapters: [turbo]`, or `installTurbo()` from `@silarhi/cap-bundle/turbo`): the Turbo
-  one forgets the tokens of a Turbo submission and before Turbo caches the page. The Live one (`adapters: [live]`,
-  `installLive()`) keeps the challenge out of Live Component re-renders and sends its token with the action only:
-  `ComponentWithFormTrait` validates the form on every re-render, which would redeem the token.
-- `CapValidator` is reset between the requests of long-running workers (FrankenPHP, RoadRunner).
+  one forgets the tokens of a Turbo submission and before Turbo caches the page.
 - Two ways to load it: a script the form renders (`/bundles/silarhicap/cap.js`, no build step), or the
   `silarhi--cap-bundle--cap` Stimulus controller StimulusBundle registers, which lazy-loads the widget.
 - The `CAP_ENDPOINT` and `CAP_SECRET_KEY` env vars as the default `endpoint` and `secret_key`: installing the bundle
@@ -33,4 +42,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validation messages as translation keys of the `validators` domain (`cap.validation.missing`,
   `cap.validation.invalid`), translated in English, French, German, Spanish, Italian, Dutch and Portuguese.
 
+[0.2.0]: https://github.com/silarhi/cap-bundle/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/silarhi/cap-bundle/releases/tag/v0.1.0
