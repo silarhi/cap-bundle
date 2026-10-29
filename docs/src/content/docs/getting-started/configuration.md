@@ -52,8 +52,9 @@ cap:
 
 The token is redeemed with a [PSR-18](https://www.php-fig.org/psr/psr-18/) HTTP client: Symfony's
 `psr18.http_client` by default, which FrameworkBundle registers once `symfony/http-client` is installed. It needs a
-PSR-17 implementation such as `nyholm/psr7` (or `php-http/discovery` with one). The bundle requires neither: set `http_client`, `request_factory` and
-`stream_factory` to your own service IDs to use another client. Guzzle, for instance (both classes registered as
+PSR-17 implementation such as `nyholm/psr7`: `php-http/discovery`, which the bundle requires, installs both when the
+application has neither. Set `http_client`, `request_factory` and `stream_factory` to your own service IDs to use
+another client. Guzzle, for instance (both classes registered as
 services):
 
 ```yaml

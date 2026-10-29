@@ -13,8 +13,8 @@ Stimulus or no build step at all.
 
 - **Language**: PHP 8.2+, TypeScript (`assets/`)
 - **Framework**: Symfony 6.4 / 7.x / 8.x (`symfony/form`, `symfony/validator`), PSR-18 / PSR-17 for `/siteverify`
-  (Symfony's `psr18.http_client` by default, which needs `symfony/http-client` and a PSR-17 implementation, both
-  suggested only)
+  (Symfony's `psr18.http_client` by default, which needs `symfony/http-client` and a PSR-17 implementation:
+  `php-http/discovery` installs both when the application has none)
 - **Optional**: `symfony/twig-bundle` (form theme), `symfony/asset` (versioned script URL), StimulusBundle
 - **JavaScript**: `@hotwired/stimulus` (optional peer); `cap-widget` and `@cap.js/wasm` are dev dependencies the build
   copies to `public/widget/`; built with tsdown, tested with Vitest and Playwright
@@ -118,9 +118,15 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   them the build fails with "cannot find @silarhi/cap-bundle/package.json".
 - **Fails closed**: `CapVerifier::verify()` never throws; transport, 5xx and non-JSON answers are failed verifications.
 - **PSR-18 like picasso-bundle**: `http_client` (default `psr18.http_client`), `request_factory` and `stream_factory`
-  (default: the client, which `Psr18Client` also is). The `require` stays minimal: `symfony/http-client` and its
-  PSR-17 implementation (`nyholm/psr7`) are only suggested, as in picasso-bundle, and `loadExtension()` throws a
-  `LogicException` naming them when `http_client` is null and `Psr18Client` does not exist. Tests go through the real chain: `framework.http_client.mock_response_factory`
+  (default: the client, which `Psr18Client` also is). No implementation is required: the bundle requires
+  `php-http/discovery` and the `psr/http-client-implementation` / `psr/http-factory-implementation` virtual packages,
+  like openai-php/client or knplabs/github-api. Its Composer plugin (allowed by symfony/skeleton) installs
+  `symfony/http-client` and `nyholm/psr7` when nothing provides them, so a bare `composer require` works and apps
+  with Guzzle keep it. `php-http/discovery` provides both virtual packages itself, so Composer resolves without the
+  plugin (`plugin-optional`): then nothing is installed, and `loadExtension()` throws a `LogicException` naming
+  `symfony/http-client` when `http_client` is null and `Psr18Client` does not exist. Symfony checks PSR-17 only at
+  runtime (`Psr18Client` falls back to `Http\Discovery\Psr17Factory`): do not add a build-time PSR-17 check. The
+  bundle's own `composer.json` sets `allow-plugins.php-http/discovery: false`, its dev dependencies provide both. Tests go through the real chain: `framework.http_client.mock_response_factory`
   (`tests/Fixtures/CapServerMock.php`).
 - Optional services (`assets.packages`, `request_stack`, `logger`) are injected with `ignoreOnInvalid()`.
 

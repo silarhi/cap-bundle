@@ -146,7 +146,7 @@ final class SilarhiCapBundle extends AbstractBundle
 
         // FrameworkBundle registers psr18.http_client when symfony/http-client and psr/http-client are installed
         if (null === $config['http_client'] && !class_exists(Psr18Client::class)) {
-            throw new LogicException('The Cap bundle redeems tokens with Symfony\'s "psr18.http_client" service by default, which needs symfony/http-client: run "composer require symfony/http-client nyholm/psr7", or set "cap.http_client" to your own PSR-18 client service.');
+            throw new LogicException('The Cap bundle redeems tokens with Symfony\'s "psr18.http_client" service by default, which needs symfony/http-client: run "composer require symfony/http-client", or set "cap.http_client" to your own PSR-18 client service.');
         }
         $httpClient = $config['http_client'] ?? 'psr18.http_client';
 

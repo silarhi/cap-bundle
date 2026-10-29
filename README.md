@@ -51,13 +51,14 @@
 
 - PHP 8.2+
 - Symfony 6.4, 7.x or 8.x
-- A PSR-18 HTTP client: Symfony's, with a PSR-17 implementation such as `nyholm/psr7`, or your own
+- A PSR-18 HTTP client and a PSR-17 implementation: Composer installs `symfony/http-client` and `nyholm/psr7` when
+  the application has none (`php-http/discovery`), or set your own client
 - A [Cap Standalone](https://trycap.dev/guide/standalone/) server, and a site key created in its dashboard
 
 ## Installation
 
 ```bash
-composer require silarhi/cap-bundle symfony/http-client nyholm/psr7
+composer require silarhi/cap-bundle
 ```
 
 ```dotenv
