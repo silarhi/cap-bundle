@@ -17,8 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Any PSR-18 HTTP client and PSR-17 factories (`http_client`, `request_factory`, `stream_factory`), Symfony's
   `psr18.http_client` by default.
 - The submit handling, delegated to the document: an unsolved challenge is solved before the form is submitted, the
-  invisible one as soon as the visitor focuses the form. Tokens are forgotten after a Turbo submission, before Turbo
-  caches the page and when the back-forward cache restores it.
+  invisible one as soon as the visitor focuses the form. Tokens are forgotten when the back-forward cache restores a
+  page.
+- Opt-in JavaScript adapters (`adapters: [turbo]`, or `installTurbo()` from `@silarhi/cap-bundle/turbo`): the Turbo
+  one forgets the tokens of a Turbo submission and before Turbo caches the page.
 - Two ways to load it: a script the form renders (`/bundles/silarhicap/cap.js`, no build step), or the
   `silarhi--cap-bundle--cap` Stimulus controller StimulusBundle registers, which lazy-loads `cap-widget`.
 - The `CAP_ENDPOINT` and `CAP_SECRET_KEY` env vars as the default `endpoint` and `secret_key`: installing the bundle

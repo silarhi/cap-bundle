@@ -1,17 +1,12 @@
 import { CapWidget } from "cap-widget";
 /**
- * Glue between CapType and the Cap widget, for full page loads, Turbo Drive, Turbo Frames and any other way a form
- * reaches the page: listeners delegated to the document, so there is nothing to mount or unmount per form.
+ * Glue between CapType and the Cap widget, whatever brings the form to the page (a full page load, Turbo, htmx, any
+ * SPA): listeners delegated to the document, so there is nothing to mount or unmount per form. Nothing here knows a
+ * framework: the adapters (adapters/) add what one needs, such as forgetting the tokens Turbo submitted.
  */
 /** The elements CapType renders: `data-silarhi-cap="checkbox"` on a `<cap-widget>`, `"invisible"` on a hidden input. */
 export declare const SELECTOR = "[data-silarhi-cap]";
 type CapWidgetElement = CapWidget;
-declare global {
-  interface DocumentEventMap {
-    'turbo:submit-end': CustomEvent;
-    'turbo:before-cache': CustomEvent;
-  }
-}
 /**
  * Listens to the document for the forms protected by Cap. Idempotent: call it as often as you like.
  */
@@ -28,8 +23,8 @@ export declare function configure(element: HTMLElement): void;
  */
 export declare function solve(target: Element): Promise<boolean>;
 /**
- * Forgets the tokens of a form, a field or the whole document. Turbo resets them for you; call it after submitting a
- * form with fetch() yourself and keeping it on the page, as a token is single-use.
+ * Forgets the tokens of a form, a field or the whole document. The Turbo adapter resets them for you; call it after
+ * submitting a form with fetch() yourself and keeping it on the page, as a token is single-use.
  */
 export declare function reset(target: Element | Document): void;
 export type { CapWidgetElement };

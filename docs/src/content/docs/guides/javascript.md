@@ -118,7 +118,14 @@ import { install } from '@silarhi/cap-bundle'
 install()
 ```
 
-with `render_scripts: false` and the package installed as above. `install()` is idempotent.
+with `render_scripts: false` and the package installed as above. `install()` is idempotent. Add the adapters your
+application needs, for instance [Turbo's](/guides/turbo/#the-turbo-adapter):
+
+```js
+import { installTurbo } from '@silarhi/cap-bundle/turbo'
+
+installTurbo()
+```
 
 ## API
 
@@ -132,6 +139,7 @@ import { configure, install, reset, solve } from '@silarhi/cap-bundle'
 | `solve(element)`     | Solves the challenges of a form (or one challenge) that have no token. Resolves `false` on failure |
 | `reset(element)`     | Forgets the tokens of a form, a challenge or the `document`                                        |
 | `configure(element)` | Copies the `data-silarhi-cap-*` settings of a challenge to the globals Cap reads                   |
+| `installTurbo()`     | From `@silarhi/cap-bundle/turbo`: forgets the tokens Turbo submitted or cached                     |
 
 ## Events
 

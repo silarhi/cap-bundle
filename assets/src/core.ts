@@ -1,8 +1,9 @@
 import type { Cap, CapConfig, CapWidget } from 'cap-widget'
 
 /**
- * Glue between CapType and the Cap widget, for full page loads, Turbo Drive, Turbo Frames and any other way a form
- * reaches the page: listeners delegated to the document, so there is nothing to mount or unmount per form.
+ * Glue between CapType and the Cap widget, whatever brings the form to the page (a full page load, Turbo, htmx, any
+ * SPA): listeners delegated to the document, so there is nothing to mount or unmount per form. Nothing here knows a
+ * framework: the adapters (adapters/) add what one needs, such as forgetting the tokens Turbo submitted.
  */
 
 /** The elements CapType renders: `data-silarhi-cap="checkbox"` on a `<cap-widget>`, `"invisible"` on a hidden input. */
@@ -12,13 +13,6 @@ export const SELECTOR = '[data-silarhi-cap]'
 const WIDGET_TIMEOUT = 10_000
 
 export type CapWidgetElement = CapWidget
-
-declare global {
-    interface DocumentEventMap {
-        'turbo:submit-end': CustomEvent
-        'turbo:before-cache': CustomEvent
-    }
-}
 
 /** Shared by every copy of this module on the page: the bundle's script and an application bundle may both load it. */
 const INSTALLED = Symbol.for('@silarhi/cap-bundle')
@@ -38,11 +32,10 @@ export function install(): void {
     }
     registry[INSTALLED] = true
 
-    // Capture phase: before Turbo, frameworks and the application's own submit listeners see an unsolved form
+    // Capture phase: before frameworks and the application's own submit listeners see an unsolved form
     document.addEventListener('submit', onSubmit, true)
     document.addEventListener('focusin', onFocusIn)
-    document.addEventListener('turbo:submit-end', onSubmitEnd)
-    document.addEventListener('turbo:before-cache', () => reset(document))
+    // A page the back-forward cache restores holds the tokens of the forms it showed
     window.addEventListener('pageshow', (event) => {
         if (event.persisted) {
             reset(document)
@@ -74,8 +67,8 @@ export async function solve(target: Element): Promise<boolean> {
 }
 
 /**
- * Forgets the tokens of a form, a field or the whole document. Turbo resets them for you; call it after submitting a
- * form with fetch() yourself and keeping it on the page, as a token is single-use.
+ * Forgets the tokens of a form, a field or the whole document. The Turbo adapter resets them for you; call it after
+ * submitting a form with fetch() yourself and keeping it on the page, as a token is single-use.
  */
 export function reset(target: Element | Document): void {
     for (const field of fieldsOf(target)) {
@@ -168,7 +161,7 @@ async function solveInvisible(input: HTMLInputElement): Promise<boolean> {
 }
 
 function createInvisibleCap(CapClass: typeof Cap, input: HTMLInputElement): Cap {
-    // Cap's programmatic mode appends a hidden <cap-widget> to <html>, which outlives the forms Turbo replaces
+    // Cap's programmatic mode appends a hidden <cap-widget> to <html>, which outlives the forms a SPA replaces
     for (const [field, cap] of invisibleCaps) {
         if (!field.isConnected) {
             cap.widget.remove()
@@ -265,12 +258,5 @@ function onFocusIn(event: FocusEvent): void {
         if (isInvisible(field) && !hasToken(field)) {
             void solveField(field)
         }
-    }
-}
-
-function onSubmitEnd(event: CustomEvent): void {
-    // The token was redeemed: a form Turbo keeps on the page (stream response, 422 morph...) needs a new one
-    if (event.target instanceof HTMLFormElement) {
-        reset(event.target)
     }
 }

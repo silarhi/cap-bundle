@@ -76,6 +76,10 @@ final class SilarhiCapBundle extends AbstractBundle
                     ->defaultNull()
                     ->info('PSR-17 stream factory service ID. Defaults to the HTTP client (psr18.http_client is one).')
                 ->end()
+                ->arrayNode('adapters')
+                    ->info('Framework adapters of the JavaScript, opt-in: "turbo" forgets the tokens Turbo Drive submitted or cached.')
+                    ->enumPrototype()->values(['turbo'])->end()
+                ->end()
                 ->booleanNode('render_scripts')
                     ->defaultTrue()
                     ->info('Renders the <script> of the bundle with each widget. false when the Stimulus controller or your own install() call loads it.')
@@ -133,6 +137,7 @@ final class SilarhiCapBundle extends AbstractBundle
          *     http_client: string|null,
          *     request_factory: string|null,
          *     stream_factory: string|null,
+         *     adapters: list<string>,
          *     render_scripts: bool,
          *     widget: array{script: string|null, wasm_url: string|null, hashwx_url: string|null},
          * } $config */
@@ -168,6 +173,7 @@ final class SilarhiCapBundle extends AbstractBundle
                 $config['widget']['script'],
                 $config['widget']['wasm_url'],
                 $config['widget']['hashwx_url'],
+                $config['adapters'],
                 service('assets.packages')->ignoreOnInvalid(),
                 service('request_stack')->ignoreOnInvalid(),
             ])

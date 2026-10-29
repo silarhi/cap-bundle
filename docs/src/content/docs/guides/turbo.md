@@ -1,23 +1,50 @@
 ---
 title: Turbo and SPAs
-description: How the Cap Bundle keeps working with Turbo Drive, Turbo Frames, the page caches and fetch() submissions.
+description: How the Cap Bundle works with Turbo Drive, Turbo Frames, the page caches and fetch() submissions, and its opt-in Turbo adapter.
 sidebar:
     order: 3
 ---
 
-Nothing to configure: the bundle listens to the document rather than to each form, so a form that Turbo Drive,
-a Turbo Frame, a Turbo Stream or your own code inserts is handled the moment it is submitted. What it takes care of:
+The JavaScript of the bundle knows no framework: it listens to the document rather than to each form, so a form
+that Turbo Drive, a Turbo Frame, a Turbo Stream, htmx or your own code inserts is handled the moment it is submitted.
+What a framework needs on top comes as an opt-in adapter.
 
-| Situation                                       | What happens                                                                        |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Turbo visit to a page with a form               | The widget renders; the script of the bundle and `cap-widget` are not loaded twice  |
-| Submit before the challenge is solved           | The submission waits for it, then goes on through Turbo with the same submit button |
-| Double click on submit                          | One submission                                                                      |
-| Form rejected (422), re-rendered by Turbo       | A new widget, a new challenge: tokens are single-use                                |
-| Form kept on the page after `turbo:submit-end`  | Its token is forgotten, the next submit solves a new one                            |
-| Back button, page restored from the Turbo cache | `turbo:before-cache` cleared the tokens before the snapshot                         |
-| Back button, page restored from the bfcache     | Tokens cleared on `pageshow`                                                        |
-| Token expired before submitting                 | Cap resets the widget, the next submit solves a new one                             |
+## The Turbo adapter
+
+Turn it on in the configuration:
+
+```yaml
+# config/packages/cap.yaml
+cap:
+    adapters: [turbo]
+```
+
+The script of the bundle and the Stimulus controller install it on the pages with a challenge. With
+[your own bundle](/guides/javascript/#with-your-own-bundle), install it yourself:
+
+```js
+import { install } from '@silarhi/cap-bundle'
+import { installTurbo } from '@silarhi/cap-bundle/turbo'
+
+install()
+installTurbo()
+```
+
+It forgets the tokens Turbo would otherwise submit twice: tokens are single-use.
+
+| Situation                                       | What happens                                                                        | Needs         |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------- | ------------- |
+| Turbo visit to a page with a form               | The widget renders; the script of the bundle and `cap-widget` are not loaded twice  |               |
+| Submit before the challenge is solved           | The submission waits for it, then goes on through Turbo with the same submit button |               |
+| Double click on submit                          | One submission                                                                      |               |
+| Form rejected (422), re-rendered by Turbo       | A new widget, a new challenge                                                       |               |
+| Form kept on the page after `turbo:submit-end`  | Its token is forgotten, the next submit solves a new one                            | Turbo adapter |
+| Back button, page restored from the Turbo cache | `turbo:before-cache` cleared the tokens before the snapshot                         | Turbo adapter |
+| Back button, page restored from the bfcache     | Tokens cleared on `pageshow`                                                        |               |
+| Token expired before submitting                 | Cap resets the widget, the next submit solves a new one                             |               |
+
+Without the adapter, the token of a form Turbo keeps on the page, or restores from its cache, is rejected by the Cap
+server on the next submit: the visitor sees the error and solves a new challenge.
 
 ## Forms submitted with fetch()
 

@@ -1,7 +1,8 @@
 import { Controller } from "@hotwired/stimulus";
 /**
  * Registered by StimulusBundle as "silarhi--cap-bundle--cap", the controller CapType puts on every challenge: it
- * loads the cap-widget package the first time a protected form shows up, and installs the submit handling.
+ * loads the cap-widget package the first time a protected form shows up, and installs the submit handling and the
+ * adapters the `cap.adapters` configuration lists.
  */
 export default class export_default extends Controller<HTMLElement> {
   connect(): void;
