@@ -1,7 +1,9 @@
+import { installLive } from './live'
 import { installTurbo } from './turbo'
 
 /** The adapters CapType can ask for, by the name of its `adapters` option. */
 const adapters: Record<string, () => void> = {
+    live: installLive,
     turbo: installTurbo,
 }
 

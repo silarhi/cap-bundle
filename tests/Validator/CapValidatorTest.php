@@ -70,6 +70,16 @@ final class CapValidatorTest extends ConstraintValidatorTestCase
         self::assertSame(['key:abc:def'], $this->verified);
     }
 
+    public function testForgetsTheLastResultOnReset(): void
+    {
+        $this->validator->validate('key:abc:def', new Cap());
+        self::assertNotNull($this->validator->getLastResult());
+
+        $this->validator->reset();
+
+        self::assertNull($this->validator->getLastResult());
+    }
+
     public function testRejectsAMissingTokenWithoutCallingTheServer(): void
     {
         $this->validator->validate(null, new Cap());

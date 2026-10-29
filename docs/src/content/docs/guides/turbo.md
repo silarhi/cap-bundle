@@ -1,6 +1,6 @@
 ---
-title: Turbo and SPAs
-description: How the Cap Bundle works with Turbo Drive, Turbo Frames, the page caches and fetch() submissions, and its opt-in Turbo adapter.
+title: Turbo, Live Components and SPAs
+description: How the Cap Bundle works with Turbo Drive, Turbo Frames, Live Components, the page caches and fetch() submissions, with its opt-in adapters.
 sidebar:
     order: 3
 ---
@@ -66,12 +66,39 @@ With the Stimulus controller: `data-action="my-form:sent->silarhi--cap-bundle--c
 
 ## Live Components
 
-A Live Component re-render morphs the widget back to its server-side markup, dropping the input Cap created. Keep
-the widget out of the morph with `data-live-ignore`:
+A form of a [Live Component](https://symfony.com/bundles/ux-live-component/current/index.html) using
+`ComponentWithFormTrait` is submitted, and so validated, on _every_ re-render: a token in the component's data would
+be redeemed by the first field the visitor changes, and the final action would fail. Turn on the Live adapter:
 
-```twig
-{{ form_row(form.captcha, { attr: { 'data-live-ignore': true } }) }}
+```yaml
+# config/packages/cap.yaml
+cap:
+    adapters: [live]
 ```
 
-The token is redeemed when the form is submitted, not on each re-render: validate the `Cap` constraint in the
-`#[LiveAction]` that saves the form, as usual.
+1. `CapType` renders the challenge with `data-live-ignore`: re-renders leave the widget, and its token, alone.
+2. On submit, the adapter puts the token in the component's data, without a re-render: it reaches the server with the
+   action the submit triggers, and only then.
+3. Once that request is over, it forgets the token, in the challenge and in the component's data: a form the component
+   keeps on the page (validation errors) gets a new challenge on its next submit.
+
+The usual Live form works as is:
+
+```twig
+{{ form_start(form, { attr: { 'data-action': 'live#action:prevent', 'data-live-action-param': 'save' } }) }}
+    {{ form_row(form.email) }}
+    {{ form_row(form.captcha) }}
+    <button type="submit">Send</button>
+{{ form_end(form) }}
+```
+
+```php
+#[LiveAction]
+public function save(): void
+{
+    $this->submitForm(); // redeems the token, once
+    // ...
+}
+```
+
+With your own bundle: `import { installLive } from '@silarhi/cap-bundle/live'`, after `install()`.

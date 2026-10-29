@@ -106,7 +106,7 @@ final class TestKernel extends Kernel
                 'http_client' => 'test.psr18_client',
                 'request_factory' => 'test.psr17_factory',
                 'stream_factory' => 'test.psr17_factory',
-                'adapters' => ['turbo'],
+                'adapters' => ['turbo', 'live'],
                 'render_scripts' => false,
                 'widget' => [
                     'script' => 'https://cap.example.com/assets/widget.js',

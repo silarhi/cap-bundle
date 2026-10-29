@@ -140,8 +140,9 @@ import { configure, install, loadWidget, reset, solve } from '@silarhi/cap-bundl
 | `reset(element)`      | Forgets the tokens of a form, a challenge or the `document`                                        |
 | `configure(element)`  | Copies the widget settings of a challenge (solver URLs, nonce) to the globals the widget reads     |
 | `loadWidget(element)` | Loads the widget script of a challenge, unless `<cap-widget>` is defined. Call `configure()` first |
-| `configure(element)`  | Copies the `data-silarhi-cap-*` settings of a challenge to the globals Cap reads                   |
 | `installTurbo()`      | From `@silarhi/cap-bundle/turbo`: forgets the tokens Turbo submitted or cached                     |
+| `installLive()`       | From `@silarhi/cap-bundle/live`: sends the token of Live Component forms with their action only    |
+| `tokenOf(element)`    | The token of a challenge, `''` when it has none                                                    |
 
 ## Events
 

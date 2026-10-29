@@ -1,9 +1,13 @@
 import { a as reset, i as loadWidget, n as configure, o as solve, r as install } from "./core.js";
+import { installLive } from "./live.js";
 import { installTurbo } from "./turbo.js";
 import { Controller } from "@hotwired/stimulus";
 // src/adapters/index.ts
 /** The adapters CapType can ask for, by the name of its `adapters` option. */
-const adapters = { turbo: installTurbo };
+const adapters = {
+	live: installLive,
+	turbo: installTurbo
+};
 /**
 * Installs the adapters a challenge lists in `data-silarhi-cap-adapters` (space-separated), as CapType renders them
 * from the `cap.adapters` configuration.

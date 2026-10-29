@@ -55,7 +55,7 @@ final class CapType extends AbstractType
      *                                    controller; null when the application imports cap-widget itself
      * @param string|null  $wasmUrl       the cap_wasm_bg.wasm solver; null for the widget's default
      * @param string|null  $hashwxUrl     the hashwx.wasm solver; null for the widget's default
-     * @param list<string> $adapters      the JavaScript adapters to install, e.g. ["turbo"]
+     * @param list<string> $adapters      the JavaScript adapters to install, e.g. ["turbo", "live"]
      */
     public function __construct(
         private readonly string $endpoint,
@@ -85,7 +85,7 @@ final class CapType extends AbstractType
         $view->vars['csp_nonce'] = $options['csp_nonce'];
         $view->vars['wasm_url'] = $this->assetUrl($this->wasmUrl);
         $view->vars['hashwx_url'] = $this->assetUrl($this->hashwxUrl);
-        $view->vars['adapters'] = [] === $this->adapters ? null : implode(' ', $this->adapters);
+        $view->vars['adapters'] = $this->adapters;
         // The Stimulus controller loads it too: rendered with or without the bundle's script
         $view->vars['widget_script'] = $this->assetUrl($this->widgetScript);
         $view->vars['script_url'] = $this->renderScripts ? $this->assetUrl(self::SCRIPT_PATH) : null;

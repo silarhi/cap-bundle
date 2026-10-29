@@ -74,8 +74,8 @@ final class SilarhiCapBundle extends AbstractBundle
                     ->info('PSR-17 stream factory service ID. Defaults to the HTTP client (psr18.http_client is one).')
                 ->end()
                 ->arrayNode('adapters')
-                    ->info('Framework adapters of the JavaScript, opt-in: "turbo" forgets the tokens Turbo Drive submitted or cached.')
-                    ->enumPrototype()->values(['turbo'])->end()
+                    ->info('Framework adapters of the JavaScript, opt-in: "turbo" forgets the tokens Turbo Drive submitted or cached, "live" sends the token of Live Component forms with their action only.')
+                    ->enumPrototype()->values(['live', 'turbo'])->end()
                 ->end()
                 ->booleanNode('render_scripts')
                     ->defaultTrue()
@@ -161,7 +161,8 @@ final class SilarhiCapBundle extends AbstractBundle
 
         $services->set('cap.validator', CapValidator::class)
             ->args([service('cap.verifier'), $config['enabled']])
-            ->tag('validator.constraint_validator');
+            ->tag('validator.constraint_validator')
+            ->tag('kernel.reset', ['method' => 'reset']);
 
         $services->set('cap.form_type', CapType::class)
             ->args([

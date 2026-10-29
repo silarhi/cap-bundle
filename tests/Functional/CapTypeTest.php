@@ -22,6 +22,7 @@ use Silarhi\CapBundle\Form\CapType;
 use Silarhi\CapBundle\Tests\Fixtures\CapServerMock;
 use Silarhi\CapBundle\Tests\Fixtures\TestKernel;
 use Silarhi\CapBundle\Validator\Cap;
+use Silarhi\CapBundle\Validator\CapValidator;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\DomCrawler\Crawler;
@@ -34,6 +35,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Service\ResetInterface;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
 use Twig\Environment;
 
@@ -71,6 +73,7 @@ final class CapTypeTest extends KernelTestCase
         self::assertSame('/bundles/silarhicap/widget/cap_wasm_bg.wasm?v1', $widget->attr('data-silarhi-cap-wasm-url'));
         self::assertSame('/bundles/silarhicap/widget/hashwx.wasm?v1', $widget->attr('data-silarhi-cap-hashwx-url'));
         self::assertNull($widget->attr('data-silarhi-cap-adapters'), 'Adapters are opt-in');
+        self::assertNull($widget->attr('data-live-ignore'));
         self::assertNull($widget->attr('data-cap-worker-count'));
         self::assertCount(0, $crawler->filter('label'));
 
@@ -202,6 +205,23 @@ final class CapTypeTest extends KernelTestCase
         self::assertCount(0, $form->getErrors(), 'The error stays on the field, next to the widget');
     }
 
+    public function testTheValidatorIsResetBetweenRequests(): void
+    {
+        self::bootKernel();
+
+        $resetter = self::getContainer()->get('services_resetter');
+        self::assertInstanceOf(ResetInterface::class, $resetter);
+        $validator = self::getContainer()->get('cap.validator');
+        self::assertInstanceOf(CapValidator::class, $validator);
+
+        // An accepted token adds no violation: the validator never reads its context
+        $validator->validate('site-key:abc:def', new Cap());
+        self::assertNotNull($validator->getLastResult());
+
+        $resetter->reset();
+        self::assertNull($validator->getLastResult());
+    }
+
     public function testTheConstraintProtectsAnyObject(): void
     {
         self::bootKernel();
@@ -247,7 +267,8 @@ final class CapTypeTest extends KernelTestCase
         self::assertSame('https://cap.example.com/assets/widget.js', $widget->attr('data-silarhi-cap-script'));
         self::assertSame('/cap/cap_wasm_bg.wasm?v1', $widget->attr('data-silarhi-cap-wasm-url'));
         self::assertNull($widget->attr('data-silarhi-cap-hashwx-url'), 'null leaves the widget to its default');
-        self::assertSame('turbo', $widget->attr('data-silarhi-cap-adapters'));
+        self::assertSame('turbo live', $widget->attr('data-silarhi-cap-adapters'));
+        self::assertNotNull($widget->attr('data-live-ignore'));
 
         $form = $this->createForm();
         $form->submit(['name' => 'Jane', 'cap' => 'site-key:abc:def']);

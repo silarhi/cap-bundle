@@ -3,7 +3,7 @@ import { defineConfig } from 'tsdown'
 export default defineConfig([
     {
         // StimulusBundle, Encore and AssetMapper: cap-widget and Stimulus come from the application
-        entry: { index: 'src/index.ts', controller: 'src/controller.ts', turbo: 'src/adapters/turbo.ts' },
+        entry: { index: 'src/index.ts', controller: 'src/controller.ts', live: 'src/adapters/live.ts', turbo: 'src/adapters/turbo.ts' },
         format: ['esm'],
         outExtensions: () => ({ js: '.js', dts: '.d.ts' }),
         dts: true,
