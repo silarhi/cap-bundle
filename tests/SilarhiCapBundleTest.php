@@ -20,6 +20,7 @@ use function interface_exists;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RequiresPhpunit;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -81,6 +82,7 @@ final class SilarhiCapBundleTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[RequiresPhpunit('>=12.0.0')]
     public function testDoesNotPrependTheAssetMapperPathWithoutSymfonyAssetMapper(): void
     {
         self::hideFromAutoloading(AssetMapperInterface::class);
@@ -94,6 +96,7 @@ final class SilarhiCapBundleTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[RequiresPhpunit('>=12.0.0')]
     public function testNamesThePackagesToInstallWithoutSymfonyHttpClient(): void
     {
         self::hideFromAutoloading(Psr18Client::class);
@@ -105,6 +108,7 @@ final class SilarhiCapBundleTest extends TestCase
     }
 
     #[RunInSeparateProcess]
+    #[RequiresPhpunit('>=12.0.0')]
     public function testUsesItsOwnPsr18ClientWithoutSymfonyHttpClient(): void
     {
         self::hideFromAutoloading(Psr18Client::class);
@@ -128,8 +132,11 @@ final class SilarhiCapBundleTest extends TestCase
      */
     private function builder(array $bundlesMetadata): ContainerBuilder
     {
+        // Symfony 6.4 and 7.x load the extension's configuration with the kernel's environment and build directory
         return new ContainerBuilder(new ParameterBag([
             'kernel.bundles_metadata' => $bundlesMetadata,
+            'kernel.environment' => 'test',
+            'kernel.build_dir' => sys_get_temp_dir(),
         ]));
     }
 
@@ -156,6 +163,8 @@ final class SilarhiCapBundleTest extends TestCase
     /**
      * Makes class_exists() and interface_exists() answer false for the class, as when its package is not installed.
      * Only in a separate process: the class must not be loaded yet, and the autoloaders stay wrapped.
+     * PHPUnit 12+ only: with the lowest dependencies (PHPUnit 11), PHP 8.4+ prints deprecations to stderr while the
+     * process boots, before any test code, and PHPUnit fails a process writing to stderr, or blocks once the pipe is full.
      *
      * @param class-string $class
      */
