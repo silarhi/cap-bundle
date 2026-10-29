@@ -136,6 +136,65 @@ jobs:
                       exit 1
                   fi
 
+    e2e:
+        name: E2E
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        # A real Cap server: the browser solves the challenges, the bundle redeems them through /siteverify
+        services:
+            valkey:
+                image: valkey/valkey:9-alpine
+                options: >-
+                    --health-cmd "valkey-cli ping"
+                    --health-interval 2s
+                    --health-timeout 3s
+                    --health-retries 10
+            cap:
+                image: tiago2/cap:3.1.17
+                env:
+                    ADMIN_KEY: cap_bundle_e2e_admin_key_0123456789abcdef
+                    REDIS_URL: redis://valkey:6379
+                ports:
+                    - 3000:3000
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  coverage: none
+            - name: Install Composer dependencies
+              run: composer install --no-interaction --no-progress
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v6
+              with:
+                  package_json_file: 'assets/package.json'
+            - name: Setup Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: '24'
+                  cache: 'pnpm'
+                  cache-dependency-path: 'assets/pnpm-lock.yaml'
+            - name: Install dependencies
+              working-directory: assets
+              run: pnpm install --frozen-lockfile
+            - name: Install Chromium
+              working-directory: assets
+              run: pnpm exec playwright install --with-deps chromium
+            - name: Create a site key
+              run: tests/E2E/create-site-key.sh http://localhost:3000 cap_bundle_e2e_admin_key_0123456789abcdef >> "$GITHUB_ENV"
+            - name: Playwright
+              working-directory: assets
+              run: pnpm e2e
+            - name: Upload traces
+              if: ${{ failure() }}
+              uses: actions/upload-artifact@v7
+              with:
+                  name: playwright-traces
+                  path: assets/test-results
+                  retention-days: 7
+
     coverage:
         name: Coverage
         needs: [qa]
@@ -148,7 +207,7 @@ jobs:
 
     ci-passed:
         name: CI passed
-        needs: [matrix, qa, lint, test, build]
+        needs: [matrix, qa, lint, test, build, e2e]
         if: always()
         runs-on: ubuntu-latest
         timeout-minutes: 5

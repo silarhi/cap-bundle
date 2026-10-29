@@ -68,6 +68,8 @@ pnpm build                                  # commit assets/dist and public/cap.
 - **Laminas CI Matrix Action** (`.github/workflows/continuous-integration.yml`): PHPUnit on every supported PHP, lowest
   and latest dependencies, PHPStan, PHP CS Fixer, composer checks (`.laminas-ci.json`)
 - Jobs `Lint`, `Test`, `Build` run in `assets/`; `Build` fails when the committed built files differ from a fresh build
+- Job `E2E`: Playwright (`assets/e2e`) against a `tiago2/cap` service container (pinned, Renovate bumps it), through
+  `tests/E2E/E2eKernel.php` served by `php -S tests/E2E/router.php`; `tests/E2E/create-site-key.sh` creates the site key
 - The `main` ruleset requires the `CI passed` job; coverage is published to the `badges` branch
 - Documentation site (`.github/workflows/docs.yml`): the reusable `silarhi/docs-kit` workflow builds `docs/` and
   deploys it to GitHub Pages (cap-bundle.silarhi.dev) from `main`
