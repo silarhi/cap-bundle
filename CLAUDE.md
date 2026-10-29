@@ -13,7 +13,8 @@ Stimulus or no build step at all.
 
 - **Language**: PHP 8.2+, TypeScript (`assets/`)
 - **Framework**: Symfony 6.4 / 7.x / 8.x (`symfony/form`, `symfony/validator`), PSR-18 / PSR-17 for `/siteverify`
-  (Symfony's `psr18.http_client` by default, which needs `symfony/http-client` and a PSR-17 implementation)
+  (Symfony's `psr18.http_client` by default, which needs `symfony/http-client` and a PSR-17 implementation, both
+  suggested only)
 - **Optional**: `symfony/twig-bundle` (form theme), `symfony/asset` (versioned script URL), StimulusBundle
 - **JavaScript**: `@hotwired/stimulus` (optional peer); `cap-widget` and `@cap.js/wasm` are dev dependencies the build
   copies to `public/widget/`; built with tsdown, tested with Vitest and Playwright
@@ -117,9 +118,9 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   them the build fails with "cannot find @silarhi/cap-bundle/package.json".
 - **Fails closed**: `CapVerifier::verify()` never throws; transport, 5xx and non-JSON answers are failed verifications.
 - **PSR-18 like picasso-bundle**: `http_client` (default `psr18.http_client`), `request_factory` and `stream_factory`
-  (default: the client, which `Psr18Client` also is). `symfony/http-client` stays required so that
-  `psr18.http_client` exists when the bundle is installed; its PSR-17 implementation (`nyholm/psr7`) is only
-  suggested, as in picasso-bundle. Tests go through the real chain: `framework.http_client.mock_response_factory`
+  (default: the client, which `Psr18Client` also is). The `require` stays minimal: `symfony/http-client` and its
+  PSR-17 implementation (`nyholm/psr7`) are only suggested, as in picasso-bundle, and `loadExtension()` throws a
+  `LogicException` naming them when `http_client` is null and `Psr18Client` does not exist. Tests go through the real chain: `framework.http_client.mock_response_factory`
   (`tests/Fixtures/CapServerMock.php`).
 - Optional services (`assets.packages`, `request_stack`, `logger`) are injected with `ignoreOnInvalid()`.
 

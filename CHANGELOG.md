@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - Unreleased
+
+### Changed
+
+- `symfony/http-client` is no longer required, only suggested: an application using its own PSR-18 client
+  (`http_client`) does not install it any more. Applications relying on the default `psr18.http_client` must require
+  it themselves (`composer require symfony/http-client`) if nothing else does; the bundle says so when it is missing.
+
 ## [0.2.0] - 2026-10-29
 
 ### Added
@@ -45,5 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validation messages as translation keys of the `validators` domain (`cap.validation.missing`,
   `cap.validation.invalid`), translated in English, French, German, Spanish, Italian, Dutch and Portuguese.
 
+[0.3.0]: https://github.com/silarhi/cap-bundle/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/silarhi/cap-bundle/releases/tag/v0.2.0
 [0.1.0]: https://github.com/silarhi/cap-bundle/releases/tag/v0.1.0

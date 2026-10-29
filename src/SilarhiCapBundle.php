@@ -13,11 +13,13 @@ declare(strict_types=1);
 
 namespace Silarhi\CapBundle;
 
+use function class_exists;
 use function interface_exists;
 use function is_array;
 use function is_file;
 use function is_string;
 
+use LogicException;
 use Override;
 use Silarhi\CapBundle\Form\CapType;
 use Silarhi\CapBundle\Validator\CapValidator;
@@ -30,6 +32,7 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
+use Symfony\Component\HttpClient\Psr18Client;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 final class SilarhiCapBundle extends AbstractBundle
@@ -142,6 +145,9 @@ final class SilarhiCapBundle extends AbstractBundle
         $services = $container->services();
 
         // FrameworkBundle registers psr18.http_client when symfony/http-client and psr/http-client are installed
+        if (null === $config['http_client'] && !class_exists(Psr18Client::class)) {
+            throw new LogicException('The Cap bundle redeems tokens with Symfony\'s "psr18.http_client" service by default, which needs symfony/http-client: run "composer require symfony/http-client nyholm/psr7", or set "cap.http_client" to your own PSR-18 client service.');
+        }
         $httpClient = $config['http_client'] ?? 'psr18.http_client';
 
         // The endpoint is often an env var: its trailing slash can only be normalized at runtime

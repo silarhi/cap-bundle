@@ -57,7 +57,7 @@
 ## Installation
 
 ```bash
-composer require silarhi/cap-bundle nyholm/psr7
+composer require silarhi/cap-bundle symfony/http-client nyholm/psr7
 ```
 
 ```dotenv
