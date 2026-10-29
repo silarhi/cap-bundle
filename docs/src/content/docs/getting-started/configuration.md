@@ -26,12 +26,13 @@ cap:
     adapters: []
     # Renders the <script> of the bundle with each widget. false with the Stimulus controller or your own install()
     render_scripts: true
+    # Asset paths or URLs. By default, the copies the bundle ships
     widget:
-        # The cap-widget script the bundle's script loads. null when you import cap-widget yourself
-        script: 'https://cdn.jsdelivr.net/npm/cap-widget@0.1.58'
-        # cap_wasm_bg.wasm and hashwx.wasm, to serve the solver from your domain
-        wasm_url: null
-        hashwx_url: null
+        # The cap-widget script. null when you import cap-widget yourself
+        script: 'bundles/silarhicap/widget/cap.min.js'
+        # The WebAssembly solvers. null for the widget's default, jsDelivr
+        wasm_url: 'bundles/silarhicap/widget/cap_wasm_bg.wasm'
+        hashwx_url: 'bundles/silarhicap/widget/hashwx.wasm'
 ```
 
 The trailing slash of `endpoint` is optional.
@@ -88,5 +89,5 @@ closed) and logs an error on the `cap` channel.
 
 ## The widget
 
-`widget.script`, `widget.wasm_url` and `widget.hashwx_url` serve Cap from your own domain instead of jsDelivr: see
-[self-hosting the widget](/guides/self-hosting/). `render_scripts` is covered in [JavaScript](/guides/javascript/).
+The bundle serves the widget and its solvers from your domain; `widget.script`, `widget.wasm_url` and
+`widget.hashwx_url` point them elsewhere: see [self-hosting the widget](/guides/self-hosting/). `render_scripts` is covered in [JavaScript](/guides/javascript/).

@@ -19,7 +19,10 @@
 /tests export-ignore
 /assets/.gitignore export-ignore
 /assets/biome.json export-ignore
+/assets/e2e export-ignore
 /assets/pnpm-lock.yaml export-ignore
+/assets/playwright.config.ts export-ignore
+/assets/scripts export-ignore
 /assets/pnpm-workspace.yaml export-ignore
 /assets/src export-ignore
 /assets/test export-ignore
@@ -29,3 +32,5 @@
 # Built by assets/: keep them out of diffs and language stats
 /assets/dist/** linguist-generated
 /public/cap.js linguist-generated
+# Copied from cap-widget and @cap.js/wasm by `pnpm build`
+/public/widget/** linguist-vendored

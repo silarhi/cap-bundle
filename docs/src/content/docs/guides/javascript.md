@@ -16,17 +16,18 @@ Nothing to do. Each `CapType` renders:
 <script type="module" src="/bundles/silarhicap/cap.js"></script>
 ```
 
-which loads the `cap-widget` script of [`widget.script`](/getting-started/configuration/) (jsDelivr by default).
+which loads the Cap widget the bundle ships (see [self-hosting the widget](/guides/self-hosting/)).
 A module runs once per page, however many forms render it: two forms on a page, or ten Turbo visits, load it once.
 
 It works with Webpack Encore, AssetMapper, or no front-end tooling at all, as long as `assets:install` copied
-`public/bundles/silarhicap/cap.js` (Flex does it after `composer install`).
+`public/bundles/silarhicap/` (Flex does it after `composer install`).
 
 ## With Stimulus
 
 StimulusBundle (Webpack Encore or AssetMapper) or Symfony Reprise (Vite or Rsbuild) registers the
-`silarhi--cap-bundle--cap` controller that every `CapType` carries. It is lazy: the controller, and the `cap-widget` package it imports, only load on pages with a
-protected form.
+`silarhi--cap-bundle--cap` controller that every `CapType` carries. It is lazy: the controller, and the widget it
+loads from `public/bundles/silarhicap/widget/`, only load on pages with a protected form. There is no `cap-widget`
+package to install.
 
 Turn off the script of the bundle:
 
@@ -37,10 +38,6 @@ cap:
 ```
 
 ### AssetMapper
-
-```bash
-php bin/console importmap:require cap-widget
-```
 
 `assets/controllers.json` gets the controller when Flex installs the bundle; otherwise add it:
 
@@ -57,10 +54,9 @@ php bin/console importmap:require cap-widget
 ### Webpack Encore
 
 Flex adds `"@silarhi/cap-bundle": "file:vendor/silarhi/cap-bundle/assets"` to your `package.json` and the controller
-to `assets/controllers.json`; install them with `cap-widget`:
+to `assets/controllers.json`; install them:
 
 ```bash
-pnpm add -D cap-widget
 pnpm install
 ```
 
@@ -68,10 +64,10 @@ pnpm install
 
 [Symfony Reprise](https://github.com/symfony/reprise) reads the same `controllers.json`. Flex adds
 `"@silarhi/cap-bundle": "file:vendor/silarhi/cap-bundle/assets"` to your `package.json` and the controller to
-`assets/controllers.json`; install them with `cap-widget`:
+`assets/controllers.json`; install them with Stimulus:
 
 ```bash
-pnpm add -D cap-widget @hotwired/stimulus
+pnpm add -D @hotwired/stimulus
 pnpm install
 ```
 
@@ -99,8 +95,8 @@ import { startStimulusApp } from '@symfony/reprise/stimulus'
 startStimulusApp()
 ```
 
-Vite builds the controller and `cap-widget` into their own chunks, loaded the first time a page shows a protected
-form, in production builds as with the dev server. To put your Content-Security-Policy nonce on the tags Reprise
+Vite builds the controller into its own chunk, loaded the first time a page shows a protected form, in production
+builds as with the dev server. The widget is not bundled: the controller loads it from your web root. To put your Content-Security-Policy nonce on the tags Reprise
 renders, use its `RenderAssetTagEvent`; the `csp_nonce` option of `CapType` still covers the styles of the widget
 (see [Content Security Policy](/guides/content-security-policy/)).
 
@@ -109,7 +105,11 @@ The controller has two actions: `solve` (solve now) and `reset` (forget the toke
 
 ## With your own bundle
 
-Without Stimulus, install the submit handling from your entry point:
+Without Stimulus, import the widget and install the submit handling from your entry point:
+
+```bash
+pnpm add -D cap-widget
+```
 
 ```js
 import 'cap-widget'
@@ -118,7 +118,7 @@ import { install } from '@silarhi/cap-bundle'
 install()
 ```
 
-with `render_scripts: false` and the package installed as above. `install()` is idempotent. Add the adapters your
+with `render_scripts: false`, and the widget settings of [importing cap-widget yourself](/guides/self-hosting/#importing-cap-widget-yourself). `install()` is idempotent. Add the adapters your
 application needs, for instance [Turbo's](/guides/turbo/#the-turbo-adapter):
 
 ```js
@@ -130,18 +130,19 @@ installTurbo()
 ## API
 
 ```js
-import { configure, install, reset, solve } from '@silarhi/cap-bundle'
+import { configure, install, loadWidget, reset, solve } from '@silarhi/cap-bundle'
 ```
 
-| Function             | Description                                                                                        |
-| -------------------- | -------------------------------------------------------------------------------------------------- |
-| `install()`          | Listens to the document for protected forms. Call it once; later calls do nothing                  |
-| `solve(element)`     | Solves the challenges of a form (or one challenge) that have no token. Resolves `false` on failure |
-| `reset(element)`     | Forgets the tokens of a form, a challenge or the `document`                                        |
-| `configure(element)` | Copies the `data-silarhi-cap-*` settings of a challenge to the globals Cap reads                   |
-| `installTurbo()`     | From `@silarhi/cap-bundle/turbo`: forgets the tokens Turbo submitted or cached                     |
-| `installLive()`      | From `@silarhi/cap-bundle/live`: sends the token of Live Component forms with their action only    |
-| `tokenOf(element)`   | The token of a challenge, `''` when it has none                                                    |
+| Function              | Description                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------------- |
+| `install()`           | Listens to the document for protected forms. Call it once; later calls do nothing                  |
+| `solve(element)`      | Solves the challenges of a form (or one challenge) that have no token. Resolves `false` on failure |
+| `reset(element)`      | Forgets the tokens of a form, a challenge or the `document`                                        |
+| `configure(element)`  | Copies the widget settings of a challenge (solver URLs, nonce) to the globals the widget reads     |
+| `loadWidget(element)` | Loads the widget script of a challenge, unless `<cap-widget>` is defined. Call `configure()` first |
+| `installTurbo()`      | From `@silarhi/cap-bundle/turbo`: forgets the tokens Turbo submitted or cached                     |
+| `installLive()`       | From `@silarhi/cap-bundle/live`: sends the token of Live Component forms with their action only    |
+| `tokenOf(element)`    | The token of a challenge, `''` when it has none                                                    |
 
 ## Events
 

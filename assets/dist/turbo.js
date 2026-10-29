@@ -1,4 +1,4 @@
-import { i as reset } from "./core.js";
+import { a as reset } from "./core.js";
 // src/adapters/turbo.ts
 const INSTALLED = Symbol.for("@silarhi/cap-bundle/turbo");
 /**

@@ -56,6 +56,25 @@ export function configure(element: HTMLElement): void {
 }
 
 /**
+ * Loads the widget script CapType points to (`data-silarhi-cap-script`: by default the copy the bundle ships), unless
+ * `<cap-widget>` is defined already because the application imported cap-widget itself. Call configure() first: the
+ * widget reads its globals as it loads.
+ */
+export function loadWidget(element: HTMLElement): void {
+    const script = element.dataset.silarhiCapScript
+    if (!script || customElements.get('cap-widget')) {
+        return
+    }
+
+    // A URL rather than a package: bundlers leave it alone, and the browser imports it once whoever asks. Resolved
+    // against the page: under a dev server, a path would resolve against the origin of the module that imports it.
+    const url = new URL(script, document.baseURI).href
+    import(/* webpackIgnore: true */ /* @vite-ignore */ url).catch((error: unknown) => {
+        console.error('Cap: the widget script could not be loaded.', error)
+    })
+}
+
+/**
  * Solves the challenges of a form (or a single challenge) that have no token yet.
  *
  * Resolves false when one failed: the widget shows why, an invisible challenge stays empty.

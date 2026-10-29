@@ -24,6 +24,7 @@ use Silarhi\CapBundle\Tests\Fixtures\TestKernel;
 use Silarhi\CapBundle\Validator\Cap;
 use Silarhi\CapBundle\Validator\CapValidator;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -67,8 +68,10 @@ final class CapTypeTest extends KernelTestCase
         self::assertSame('checkbox', $widget->attr('data-silarhi-cap'));
         self::assertSame('https://cap.example.com/site-key/', $widget->attr('data-cap-api-endpoint'));
         self::assertSame('fr', $widget->attr('data-cap-lang'));
-        self::assertSame('https://cdn.jsdelivr.net/npm/cap-widget@0.1.58', $widget->attr('data-silarhi-cap-script'));
-        self::assertNull($widget->attr('data-silarhi-cap-wasm-url'));
+        // The copies of the widget the bundle ships, versioned like any asset
+        self::assertSame('/bundles/silarhicap/widget/cap.min.js?v1', $widget->attr('data-silarhi-cap-script'));
+        self::assertSame('/bundles/silarhicap/widget/cap_wasm_bg.wasm?v1', $widget->attr('data-silarhi-cap-wasm-url'));
+        self::assertSame('/bundles/silarhicap/widget/hashwx.wasm?v1', $widget->attr('data-silarhi-cap-hashwx-url'));
         self::assertNull($widget->attr('data-silarhi-cap-adapters'), 'Adapters are opt-in');
         self::assertNull($widget->attr('data-live-ignore'));
         self::assertNull($widget->attr('data-cap-worker-count'));
@@ -79,6 +82,19 @@ final class CapTypeTest extends KernelTestCase
         self::assertSame('module', $script->attr('type'));
         self::assertSame('/bundles/silarhicap/cap.js?v1', $script->attr('src'));
         self::assertNull($script->attr('nonce'));
+    }
+
+    public function testAssetMapperServesTheControllerAndTheScriptOfTheBundle(): void
+    {
+        self::bootKernel(['environment' => 'asset_mapper']);
+
+        $assetMapper = self::getContainer()->get('test.asset_mapper');
+        self::assertInstanceOf(AssetMapperInterface::class, $assetMapper);
+        self::assertNotNull($assetMapper->getAsset('@silarhi/cap-bundle/controller.js'), 'StimulusBundle imports the controller from there');
+
+        $src = $this->render($this->createForm())->filter('script')->attr('src');
+        // Symfony 6.4.0 also appends the version of the default package
+        self::assertMatchesRegularExpression('#^/assets/bundles/silarhicap/cap-[\w-]+\.js(\?v1)?$#', (string) $src);
     }
 
     public function testRendersTheOptions(): void
@@ -247,9 +263,10 @@ final class CapTypeTest extends KernelTestCase
         $widget = $crawler->filter('cap-widget');
 
         self::assertCount(0, $crawler->filter('script'));
-        self::assertNull($widget->attr('data-silarhi-cap-script'));
-        self::assertSame('/cap/cap_wasm_bg.wasm', $widget->attr('data-silarhi-cap-wasm-url'));
-        self::assertSame('/cap/hashwx.wasm', $widget->attr('data-silarhi-cap-hashwx-url'));
+        // The Stimulus controller loads the widget when the bundle's script is not rendered
+        self::assertSame('https://cap.example.com/assets/widget.js', $widget->attr('data-silarhi-cap-script'));
+        self::assertSame('/cap/cap_wasm_bg.wasm?v1', $widget->attr('data-silarhi-cap-wasm-url'));
+        self::assertNull($widget->attr('data-silarhi-cap-hashwx-url'), 'null leaves the widget to its default');
         self::assertSame('turbo live', $widget->attr('data-silarhi-cap-adapters'));
         self::assertNotNull($widget->attr('data-live-ignore'));
 

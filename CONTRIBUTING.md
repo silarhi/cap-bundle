@@ -37,15 +37,33 @@ composer normalize --dry-run
 
 The submit handling and the Stimulus controller live in [`assets/`](assets), in TypeScript. Their built files are
 committed: Composer installs them, StimulusBundle and AssetMapper read `assets/dist/`, and `assets:install` copies
-`public/cap.js`. Rebuild them in the same commit as the source, the CI checks they match.
+`public/`. Rebuild them in the same commit as the source, the CI checks they match.
+
+`public/widget/` holds the Cap widget the bundle ships, copied from the `cap-widget` and `@cap.js/wasm` dev
+dependencies by `pnpm build`. To update it, bump both packages (the build fails when they do not match), rebuild and
+commit; Renovate's pull requests are rebuilt by a workflow.
 
 ```bash
 cd assets
 pnpm install
-pnpm test       # Vitest
+pnpm test       # Vitest (pnpm test:coverage writes coverage/)
 pnpm lint       # Biome
 pnpm typecheck
-pnpm build      # assets/dist and public/cap.js
+pnpm build      # assets/dist, public/cap.js and public/widget/
+```
+
+## End-to-end tests
+
+`assets/e2e` drives a browser (Playwright) against a real [Cap Standalone](https://trycap.dev/guide/standalone/)
+server: the challenges are solved in the browser and redeemed by `tests/E2E/E2eKernel.php`. The CI runs them with a
+Cap service container; locally, with a Cap server on port 3000:
+
+```bash
+export $(tests/E2E/create-site-key.sh http://localhost:3000 <ADMIN_KEY>)
+cd assets
+pnpm exec playwright install chromium
+pnpm build
+pnpm e2e
 ```
 
 ## Documentation

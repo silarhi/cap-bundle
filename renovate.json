@@ -3,6 +3,7 @@
     "extends": ["config:recommended"],
     "platformAutomerge": true,
     "automergeType": "pr",
+    "gitIgnoredAuthors": ["41898282+github-actions[bot]@users.noreply.github.com"],
     "minimumReleaseAge": "3 days",
     "packageRules": [
         {
@@ -34,6 +35,11 @@
             "matchDepTypes": ["require"],
             "matchPackageNames": ["symfony/**"],
             "rangeStrategy": "widen"
+        },
+        {
+            "description": "The bundle ships cap-widget and the WebAssembly solvers it fetches: one PR for both, rebuilt by the \"Rebuild the widget\" workflow",
+            "matchPackageNames": ["cap-widget", "@cap.js/wasm"],
+            "groupName": "Cap widget"
         }
     ]
 }

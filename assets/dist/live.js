@@ -1,4 +1,4 @@
-import { i as reset, o as tokenOf, t as SELECTOR } from "./core.js";
+import { a as reset, s as tokenOf, t as SELECTOR } from "./core.js";
 // src/adapters/live.ts
 const INSTALLED = Symbol.for("@silarhi/cap-bundle/live");
 /**

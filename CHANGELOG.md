@@ -25,10 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ComponentWithFormTrait` validates the form on every re-render, which would redeem the token.
 - `CapValidator` is reset between the requests of long-running workers (FrankenPHP, RoadRunner).
 - Two ways to load it: a script the form renders (`/bundles/silarhicap/cap.js`, no build step), or the
-  `silarhi--cap-bundle--cap` Stimulus controller StimulusBundle registers, which lazy-loads `cap-widget`.
+  `silarhi--cap-bundle--cap` Stimulus controller StimulusBundle registers, which lazy-loads the widget.
 - The `CAP_ENDPOINT` and `CAP_SECRET_KEY` env vars as the default `endpoint` and `secret_key`: installing the bundle
   needs no configuration file.
-- `widget.script`, `widget.wasm_url` and `widget.hashwx_url` to serve the widget and its solver from your domain.
+- The Cap widget and its WebAssembly solvers, served from `/bundles/silarhicap/widget/`: no CDN by default, and no
+  `cap-widget` package to install. `widget.script`, `widget.wasm_url` and `widget.hashwx_url` point them elsewhere.
 - Validation messages as translation keys of the `validators` domain (`cap.validation.missing`,
   `cap.validation.invalid`), translated in English, French, German, Spanish, Italian, Dutch and Portuguese.
 

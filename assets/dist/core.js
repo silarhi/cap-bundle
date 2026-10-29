@@ -39,6 +39,22 @@ function configure(element) {
 	window.CAP_SCRIPT_NONCE ??= silarhiCapNonce;
 }
 /**
+* Loads the widget script CapType points to (`data-silarhi-cap-script`: by default the copy the bundle ships), unless
+* `<cap-widget>` is defined already because the application imported cap-widget itself. Call configure() first: the
+* widget reads its globals as it loads.
+*/
+function loadWidget(element) {
+	const script = element.dataset.silarhiCapScript;
+	if (!script || customElements.get("cap-widget")) return;
+	import(
+		/* webpackIgnore: true */
+		/* @vite-ignore */
+		new URL(script, document.baseURI).href
+).catch((error) => {
+		console.error("Cap: the widget script could not be loaded.", error);
+	});
+}
+/**
 * Solves the challenges of a form (or a single challenge) that have no token yet.
 *
 * Resolves false when one failed: the widget shows why, an invisible challenge stays empty.
@@ -167,4 +183,4 @@ function onFocusIn(event) {
 	if (!form) return;
 	for (const field of fieldsOf(form)) if (isInvisible(field) && !hasToken(field)) solveField(field);
 }
-export { solve as a, reset as i, configure as n, tokenOf as o, install as r, SELECTOR as t };
+export { reset as a, loadWidget as i, configure as n, solve as o, install as r, tokenOf as s, SELECTOR as t };
