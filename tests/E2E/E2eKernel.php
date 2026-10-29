@@ -109,6 +109,8 @@ final class E2eKernel extends Kernel
             'validation' => ['enabled' => true],
             'translator' => ['enabled' => true, 'default_path' => '%kernel.project_dir%/tests/Fixtures/translations'],
             'http_client' => ['enabled' => true],
+            // Installed for the functional tests: router.php serves public/ as assets:install would
+            'asset_mapper' => ['enabled' => false],
         ]);
         $container->extension('twig', ['default_path' => '%kernel.project_dir%/tests/E2E/templates', 'strict_variables' => true]);
         // endpoint and secret_key: the CAP_ENDPOINT and CAP_SECRET_KEY env vars

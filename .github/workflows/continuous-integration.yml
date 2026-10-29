@@ -101,7 +101,15 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
             - name: Test
-              run: pnpm test
+              run: pnpm test:coverage
+            - name: Upload coverage
+              if: ${{ !cancelled() }}
+              uses: actions/upload-artifact@v7
+              with:
+                  name: js-coverage
+                  path: assets/coverage/clover.xml
+                  if-no-files-found: ignore
+                  retention-days: 30
 
     build:
         name: Build
@@ -197,7 +205,7 @@ jobs:
 
     coverage:
         name: Coverage
-        needs: [qa]
+        needs: [qa, test]
         if: ${{ !cancelled() }}
         permissions:
             actions: read

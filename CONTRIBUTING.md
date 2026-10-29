@@ -42,7 +42,7 @@ committed: Composer installs them, StimulusBundle and AssetMapper read `assets/d
 ```bash
 cd assets
 pnpm install
-pnpm test       # Vitest
+pnpm test       # Vitest (pnpm test:coverage writes coverage/)
 pnpm lint       # Biome
 pnpm typecheck
 pnpm build      # assets/dist and public/cap.js

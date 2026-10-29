@@ -23,6 +23,7 @@ use Silarhi\CapBundle\Tests\Fixtures\CapServerMock;
 use Silarhi\CapBundle\Tests\Fixtures\TestKernel;
 use Silarhi\CapBundle\Validator\Cap;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -76,6 +77,19 @@ final class CapTypeTest extends KernelTestCase
         self::assertSame('module', $script->attr('type'));
         self::assertSame('/bundles/silarhicap/cap.js?v1', $script->attr('src'));
         self::assertNull($script->attr('nonce'));
+    }
+
+    public function testAssetMapperServesTheControllerAndTheScriptOfTheBundle(): void
+    {
+        self::bootKernel(['environment' => 'asset_mapper']);
+
+        $assetMapper = self::getContainer()->get('test.asset_mapper');
+        self::assertInstanceOf(AssetMapperInterface::class, $assetMapper);
+        self::assertNotNull($assetMapper->getAsset('@silarhi/cap-bundle/controller.js'), 'StimulusBundle imports the controller from there');
+
+        $src = $this->render($this->createForm())->filter('script')->attr('src');
+        // Symfony 6.4.0 also appends the version of the default package
+        self::assertMatchesRegularExpression('#^/assets/bundles/silarhicap/cap-[\w-]+\.js(\?v1)?$#', (string) $src);
     }
 
     public function testRendersTheOptions(): void
