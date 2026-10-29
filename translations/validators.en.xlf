@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+    <file source-language="en" target-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="silarhi_cap.missing">
+                <source>Please verify you are human.</source>
+                <target>Please verify you are human.</target>
+            </trans-unit>
+            <trans-unit id="silarhi_cap.invalid">
+                <source>The human verification failed, please try again.</source>
+                <target>The human verification failed, please try again.</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

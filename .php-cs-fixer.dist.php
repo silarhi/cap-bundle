@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of the Cap Bundle package.
+ *
+ * (c) SILARHI <dev@silarhi.fr>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
+$header = <<<'EOF'
+This file is part of the Cap Bundle package.
+
+(c) SILARHI <dev@silarhi.fr>
+
+This source file is subject to the MIT license that is bundled
+with this source code in the file LICENSE.
+EOF;
+
+$finder = PhpCsFixer\Finder::create()
+    ->in(__DIR__)
+    ->exclude([
+        'assets',
+        'var',
+        'vendor',
+    ])
+;
+
+$config = new PhpCsFixer\Config();
+
+return $config
+    ->setParallelConfig(PhpCsFixer\Runner\Parallel\ParallelConfigFactory::detect())
+    ->setRules([
+        '@Symfony' => true,
+        '@Symfony:risky' => true,
+        '@DoctrineAnnotation' => true,
+        'array_syntax' => ['syntax' => 'short'],
+        'phpdoc_summary' => false,
+        'no_superfluous_phpdoc_tags' => true,
+        'header_comment' => ['header' => $header],
+        'concat_space' => ['spacing' => 'one'],
+        'native_constant_invocation' => true,
+        'native_function_invocation' => ['include' => ['@compiler_optimized']],
+        'ordered_imports' => ['sort_algorithm' => 'alpha'],
+        'global_namespace_import' => ['import_functions' => true],
+        'declare_strict_types' => true,
+        'static_lambda' => false,
+    ])
+    ->setRiskyAllowed(true)
+    ->setCacheFile(__DIR__ . '/var/tools/.php-cs-fixer.cache')
+    ->setFinder($finder);

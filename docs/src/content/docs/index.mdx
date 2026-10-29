@@ -1,0 +1,42 @@
+---
+title: Cap Bundle
+description: Cap, the self-hosted proof-of-work CAPTCHA, in your Symfony forms.
+template: splash
+hero:
+    tagline: <a href="https://trycap.dev">Cap</a>, the self-hosted proof-of-work CAPTCHA, in your Symfony forms. A form type, a validator constraint and a widget that keeps working across Turbo visits — the KarserRecaptcha3Bundle way, without Google.
+    actions:
+        - text: Get started
+          link: /getting-started/installation/
+          icon: right-arrow
+        - text: View on GitHub
+          link: https://github.com/silarhi/cap-bundle
+          icon: github
+          variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components'
+
+```bash
+composer require silarhi/cap-bundle
+```
+
+<CardGrid>
+    <Card title="One form field" icon="pencil">
+        `CapType` renders the widget and validates the token on submit, with the `Cap` constraint.
+    </Card>
+    <Card title="Checkbox or invisible" icon="seti:checkbox">
+        Cap's widget, or nothing at all: the challenge is solved while the visitor fills the form.
+    </Card>
+    <Card title="SPA ready" icon="rocket">
+        Turbo Drive, Turbo Frames, the Turbo cache, the back-forward cache and forms you submit with `fetch()`.
+    </Card>
+    <Card title="Stimulus or not" icon="puzzle">
+        A controller StimulusBundle registers for you, or a script the form renders, with no build step.
+    </Card>
+    <Card title="Self-hosted end to end" icon="seti:lock">
+        Your Cap server, and the widget script and its WebAssembly solver from your domain if you like.
+    </Card>
+    <Card title="Any payload" icon="seti:json">
+        The `#[Cap]` constraint and `CapVerifierInterface` protect JSON endpoints too.
+    </Card>
+</CardGrid>

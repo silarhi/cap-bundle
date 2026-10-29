@@ -1,0 +1,158 @@
+name: 'Continuous Integration'
+
+on:
+    pull_request:
+    push:
+        branches:
+            - '*.x'
+            - 'main'
+        tags:
+            - 'v*.*.*'
+
+permissions:
+    contents: read
+
+# Supersede outdated runs of a pull request; push runs (head_ref empty) are never cancelled.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+    cancel-in-progress: true
+
+jobs:
+    matrix:
+        name: Generate job matrix
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        outputs:
+            matrix: ${{ steps.matrix.outputs.matrix }}
+        steps:
+            - name: Gather CI configuration
+              id: matrix
+              uses: laminas/laminas-ci-matrix-action@v1
+
+    qa:
+        name: QA Checks
+        needs: [matrix]
+        runs-on: ${{ matrix.operatingSystem }}
+        timeout-minutes: 15
+        strategy:
+            fail-fast: false
+            matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+        steps:
+            - name: ${{ matrix.name }}
+              uses: laminas/laminas-continuous-integration-action@v1
+              with:
+                  job: ${{ matrix.job }}
+            - name: Upload coverage
+              if: ${{ !cancelled() && startsWith(matrix.name, 'PHPUnit [') && endsWith(matrix.name, ', latest]') }}
+              uses: actions/upload-artifact@v7
+              with:
+                  name: clover-${{ fromJSON(matrix.job).php }}
+                  path: coverage/clover.xml
+                  if-no-files-found: ignore
+                  retention-days: 30
+
+    lint:
+        name: Lint
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        defaults:
+            run:
+                working-directory: assets
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v6
+              with:
+                  package_json_file: 'assets/package.json'
+            - name: Setup Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: '24'
+                  cache: 'pnpm'
+                  cache-dependency-path: 'assets/pnpm-lock.yaml'
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+            - name: Biome
+              run: pnpm lint
+            - name: Typecheck
+              run: pnpm typecheck
+
+    test:
+        name: Test
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        defaults:
+            run:
+                working-directory: assets
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v6
+              with:
+                  package_json_file: 'assets/package.json'
+            - name: Setup Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: '24'
+                  cache: 'pnpm'
+                  cache-dependency-path: 'assets/pnpm-lock.yaml'
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+            - name: Test
+              run: pnpm test
+
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        defaults:
+            run:
+                working-directory: assets
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v6
+              with:
+                  package_json_file: 'assets/package.json'
+            - name: Setup Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: '24'
+                  cache: 'pnpm'
+                  cache-dependency-path: 'assets/pnpm-lock.yaml'
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+            - name: Build
+              run: pnpm build
+            # dist/ and public/cap.js are committed: Composer installs them, StimulusBundle and assets:install read them
+            - name: Check that the built files are committed
+              run: |
+                  if [ -n "$(git status --porcelain -- dist ../public)" ]; then
+                      git status --short -- dist ../public
+                      echo "::error::Run 'pnpm build' in assets/ and commit the result."
+                      exit 1
+                  fi
+
+    coverage:
+        name: Coverage
+        needs: [qa]
+        if: ${{ !cancelled() }}
+        permissions:
+            actions: read
+            contents: write
+            pull-requests: write
+        uses: silarhi/.github/.github/workflows/coverage-report.yml@main
+
+    ci-passed:
+        name: CI passed
+        needs: [matrix, qa, lint, test, build]
+        if: always()
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - name: Check that all required jobs succeeded
+              if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+              run: exit 1

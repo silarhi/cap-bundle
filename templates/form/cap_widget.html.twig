@@ -1,0 +1,31 @@
+{%- block silarhi_cap_widget -%}
+    {%- if enabled -%}
+        {%- set cap_attr = {
+            'data-controller': ((attr['data-controller'] ?? '') ~ ' silarhi--cap-bundle--cap')|trim,
+            'data-silarhi-cap': mode,
+            'data-silarhi-cap-script': widget_script,
+            'data-silarhi-cap-wasm-url': wasm_url,
+            'data-silarhi-cap-hashwx-url': hashwx_url,
+            'data-silarhi-cap-nonce': csp_nonce,
+            'data-cap-api-endpoint': endpoint,
+            'data-cap-lang': locale,
+            'data-cap-worker-count': worker_count,
+            'data-cap-troubleshooting-url': troubleshooting_url,
+        } -%}
+        {%- for key, label in i18n -%}
+            {%- set cap_attr = cap_attr|merge({('data-cap-i18n-' ~ key): label}) -%}
+        {%- endfor -%}
+        {%- set attr = attr|merge(cap_attr|filter(value => value is not null)) -%}
+        {%- if mode == 'invisible' -%}
+            {# Solved by the bundle's script with Cap's programmatic mode: no UI to hide #}
+            <input type="hidden" id="{{ id }}" name="{{ full_name }}" {{ block('attributes') }}>
+        {%- else -%}
+            {# The widget injects <input type="hidden" name="{{ full_name }}"> itself, and fills it once solved #}
+            <cap-widget id="{{ id }}" data-cap-hidden-field-name="{{ full_name }}"{% if required %} required{% endif %} {{ block('attributes') }}></cap-widget>
+        {%- endif -%}
+        {%- if script_url -%}
+            {# A module runs once per page, however many forms render it, and once per visit with Turbo Drive #}
+            <script type="module" src="{{ script_url }}"{% if csp_nonce %} nonce="{{ csp_nonce }}"{% endif %}></script>
+        {%- endif -%}
+    {%- endif -%}
+{%- endblock -%}

@@ -1,0 +1,89 @@
+{
+    "name": "silarhi/cap-bundle",
+    "description": "Cap, the self-hosted proof-of-work CAPTCHA, for Symfony forms: a form type, a validator constraint and a Turbo-ready widget",
+    "license": "MIT",
+    "type": "symfony-bundle",
+    "keywords": [
+        "cap",
+        "captcha",
+        "proof-of-work",
+        "recaptcha",
+        "symfony",
+        "symfony-bundle",
+        "symfony-form",
+        "symfony-ux",
+        "turbo",
+        "stimulus"
+    ],
+    "authors": [
+        {
+            "name": "SILARHI",
+            "email": "dev@silarhi.fr"
+        }
+    ],
+    "homepage": "https://cap-bundle.silarhi.dev",
+    "support": {
+        "issues": "https://github.com/silarhi/cap-bundle/issues",
+        "source": "https://github.com/silarhi/cap-bundle",
+        "docs": "https://cap-bundle.silarhi.dev"
+    },
+    "require": {
+        "php": ">=8.2",
+        "symfony/config": "^6.4 || ^7.0 || ^8.0",
+        "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
+        "symfony/form": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-client": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0",
+        "symfony/validator": "^6.4 || ^7.0 || ^8.0"
+    },
+    "require-dev": {
+        "ergebnis/composer-normalize": "^2.54.0",
+        "friendsofphp/php-cs-fixer": "^3.95.27",
+        "phpstan/extension-installer": "^1.4.3",
+        "phpstan/phpstan": "^2.3.1",
+        "phpstan/phpstan-strict-rules": "^2.1.0",
+        "phpstan/phpstan-symfony": "^2.1.0",
+        "phpunit/phpunit": "^11.5.57 || ^12.5.38 || ^13.4.1",
+        "rector/rector": "^2.7.0",
+        "symfony/asset": "^6.4 || ^7.0 || ^8.0",
+        "symfony/browser-kit": "^6.4 || ^7.0 || ^8.0",
+        "symfony/css-selector": "^6.4 || ^7.0 || ^8.0",
+        "symfony/error-handler": "^6.4 || ^7.0 || ^8.0",
+        "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
+        "symfony/translation": "^6.4 || ^7.0 || ^8.0",
+        "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
+        "twig/twig": "^3.0"
+    },
+    "suggest": {
+        "symfony/asset": "Versions the URL of the bundle's script (bundles/silarhicap/cap.js) like your other assets",
+        "symfony/framework-bundle": "Register Silarhi\\CapBundle\\SilarhiCapBundle for zero-config service wiring",
+        "symfony/twig-bundle": "Renders the CapType widget: the bundle adds its form theme to twig.form_themes"
+    },
+    "autoload": {
+        "psr-4": {
+            "Silarhi\\CapBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Silarhi\\CapBundle\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "ergebnis/composer-normalize": true,
+            "phpstan/extension-installer": true
+        },
+        "audit": {
+            "block-insecure": false
+        },
+        "preferred-install": {
+            "*": "dist"
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "bump:tools": "@composer bump ergebnis/composer-normalize friendsofphp/php-cs-fixer phpstan/* phpunit/phpunit rector/rector",
+        "test": "phpunit"
+    }
+}
