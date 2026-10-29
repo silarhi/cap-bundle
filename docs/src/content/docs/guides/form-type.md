@@ -96,6 +96,20 @@ Errors stay on the field (`error_bubbling` is `false`): `form_row(form.captcha)`
 A token is single-use. When the form comes back with an error (any field), the widget renders again and the visitor
 solves a new challenge.
 
+## Several CAPTCHAs on a page
+
+A contact form and a newsletter form on the same page can each have their `CapType`. Every challenge has its own
+token: submitting one form solves and redeems only its own challenges, and the script of the bundle loads once
+whatever the number of forms.
+
+Two things to keep in mind:
+
+- give the forms different names (`createNamed('newsletter', NewsletterType::class)`) when the same form type appears
+  twice, otherwise both fields get the same `id`;
+- each checkbox widget starts solving in the background as soon as the visitor interacts with the page, so several
+  of them compute several challenges. The invisible mode only solves the challenge of the form the visitor focuses:
+  prefer it for the secondary forms of a page (newsletter, search).
+
 ## Styling
 
 Cap's widget is styled with CSS variables:
