@@ -1,1 +1,3 @@
-export { t as SELECTOR, n as configure, r as install, i as loadWidget, a as reset, o as solve, s as tokenOf } from "./core.js";
+import { a as reset, i as loadWidget, n as configure, o as solve, r as install, s as tokenOf, t as SELECTOR } from "./core.js";
+import { t as connect } from "./connect.js";
+export { SELECTOR, configure, connect, install, loadWidget, reset, solve, tokenOf };

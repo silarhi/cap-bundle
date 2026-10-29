@@ -103,6 +103,47 @@ renders, use its `RenderAssetTagEvent`; the `csp_nonce` option of `CapType` stil
 The controller has two actions: `solve` (solve now) and `reset` (forget the token), e.g.
 `data-action="click->silarhi--cap-bundle--cap#solve"`.
 
+## With a listener library
+
+Your application runs code for each element that shows up, with something else than Stimulus? Call `connect()` for
+each challenge: like the Stimulus controller, it installs the submit handling and the adapters of `cap.adapters`, and
+loads the widget the bundle ships, from your web root. It is idempotent, and the package comes from
+`vendor/silarhi/cap-bundle/assets`, which Flex adds to your `package.json`.
+
+```yaml
+# config/packages/cap.yaml
+cap:
+    render_scripts: false
+```
+
+With [`@silarhi/app-js`](https://www.npmjs.com/package/@silarhi/app-js), lazily, so that only the pages of a form
+download it:
+
+```js
+// assets/listeners/cap.js
+import { defineListener } from '@silarhi/app-js'
+import { connect, SELECTOR } from '@silarhi/cap-bundle'
+
+export default defineListener({ selector: SELECTOR, connect })
+```
+
+```js
+// assets/app.js
+import { App, lazyListener } from '@silarhi/app-js'
+
+const app = new App({
+    listeners: [lazyListener('[data-silarhi-cap]', () => import('./listeners/cap'))],
+})
+```
+
+With htmx:
+
+```js
+import { connect, SELECTOR } from '@silarhi/cap-bundle'
+
+htmx.onLoad((content) => content.querySelectorAll(SELECTOR).forEach(connect))
+```
+
 ## With your own bundle
 
 Without Stimulus, import the widget and install the submit handling from your entry point:
@@ -130,11 +171,12 @@ installTurbo()
 ## API
 
 ```js
-import { configure, install, loadWidget, reset, solve } from '@silarhi/cap-bundle'
+import { configure, connect, install, loadWidget, reset, solve } from '@silarhi/cap-bundle'
 ```
 
 | Function              | Description                                                                                        |
 | --------------------- | -------------------------------------------------------------------------------------------------- |
+| `connect(element)`    | Everything a challenge needs: `install()`, the adapters it lists, `configure()`, `loadWidget()`    |
 | `install()`           | Listens to the document for protected forms. Call it once; later calls do nothing                  |
 | `solve(element)`      | Solves the challenges of a form (or one challenge) that have no token. Resolves `false` on failure |
 | `reset(element)`      | Forgets the tokens of a form, a challenge or the `document`                                        |

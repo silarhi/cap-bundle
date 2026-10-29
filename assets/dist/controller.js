@@ -1,20 +1,6 @@
-import { a as reset, i as loadWidget, n as configure, o as solve, r as install } from "./core.js";
-import { installLive } from "./live.js";
-import { installTurbo } from "./turbo.js";
+import { a as reset, o as solve } from "./core.js";
+import { t as connect } from "./connect.js";
 import { Controller } from "@hotwired/stimulus";
-// src/adapters/index.ts
-/** The adapters CapType can ask for, by the name of its `adapters` option. */
-const adapters = {
-	live: installLive,
-	turbo: installTurbo
-};
-/**
-* Installs the adapters a challenge lists in `data-silarhi-cap-adapters` (space-separated), as CapType renders them
-* from the `cap.adapters` configuration.
-*/
-function installAdapters(element) {
-	for (const name of (element.dataset.silarhiCapAdapters ?? "").split(" ")) adapters[name]?.();
-}
 // src/controller.ts
 /**
 * Registered by StimulusBundle as "silarhi--cap-bundle--cap", the controller CapType puts on every challenge: it
@@ -23,10 +9,7 @@ function installAdapters(element) {
 */
 var controller_default = class extends Controller {
 	connect() {
-		configure(this.element);
-		install();
-		installAdapters(this.element);
-		loadWidget(this.element);
+		connect(this.element);
 	}
 	/** Solves the challenge now, e.g. `data-action="click->silarhi--cap-bundle--cap#solve"`. */
 	solve() {

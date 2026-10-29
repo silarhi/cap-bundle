@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `connect(element)`, for the applications that react to the elements showing up without Stimulus (a listener
+  library, htmx...): what the Stimulus controller does, the submit handling, the adapters of `cap.adapters`, the widget
+  settings and the widget script, in one idempotent call.
 - The Live Components adapter (`adapters: [live]`, or `installLive()` from `@silarhi/cap-bundle/live`): it keeps the
   challenge out of Live Component re-renders and sends its token with the action only. `ComponentWithFormTrait`
   validates the form on every re-render, which would redeem the token.

@@ -1,6 +1,6 @@
 import { Controller } from '@hotwired/stimulus'
-import { installAdapters } from './adapters'
-import { configure, install, loadWidget, reset, solve } from './core'
+import { connect } from './connect'
+import { reset, solve } from './core'
 
 /**
  * Registered by StimulusBundle as "silarhi--cap-bundle--cap", the controller CapType puts on every challenge: it
@@ -9,11 +9,7 @@ import { configure, install, loadWidget, reset, solve } from './core'
  */
 export default class extends Controller<HTMLElement> {
     connect(): void {
-        // Before the widget renders: it reads the nonce of its <style> when it connects
-        configure(this.element)
-        install()
-        installAdapters(this.element)
-        loadWidget(this.element)
+        connect(this.element)
     }
 
     /** Solves the challenge now, e.g. `data-action="click->silarhi--cap-bundle--cap#solve"`. */
