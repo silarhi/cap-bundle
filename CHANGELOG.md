@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `CapType`, a form field rendering the [Cap](https://trycap.dev) widget (`mode: checkbox`) or a hidden input solved
-  with Cap's programmatic mode (`mode: invisible`), and validating the token on submit. Options: `locale`,
+- `CapType`, a form field rendering the [Cap](https://trycap.dev) widget (`CapMode::Checkbox`) or a hidden input solved
+  with Cap's programmatic mode (`CapMode::Invisible`), and validating the token on submit. Options: `locale`,
   `worker_count`, `troubleshooting_url`, `i18n`, `csp_nonce`.
 - The `Cap` constraint and `CapVerifierInterface`, which redeem a token against the `/siteverify` endpoint of the Cap
   server, for JSON endpoints and DTOs. A Cap server out of reach rejects the token.

@@ -43,6 +43,7 @@ when@test:
 ```diff
 -use Karser\Recaptcha3Bundle\Form\Recaptcha3Type;
 -use Karser\Recaptcha3Bundle\Validator\Constraints\Recaptcha3;
++use Silarhi\CapBundle\Form\CapMode;
 +use Silarhi\CapBundle\Form\CapType;
 
 -$builder->add('captcha', Recaptcha3Type::class, [
@@ -50,11 +51,11 @@ when@test:
 -    'action_name' => 'contact',
 -]);
 +$builder->add('captcha', CapType::class, [
-+    'mode' => CapType::MODE_INVISIBLE,
++    'mode' => CapMode::Invisible,
 +]);
 ```
 
-`CapType` adds its constraint itself. `mode: invisible` keeps the reCAPTCHA v3 experience, nothing to click; the
+`CapType` adds its constraint itself. `CapMode::Invisible` keeps the reCAPTCHA v3 experience, nothing to click; the
 default checkbox mode shows Cap's widget instead.
 
 | KarserRecaptcha3Bundle                       | Cap Bundle                                                        |

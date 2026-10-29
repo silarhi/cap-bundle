@@ -17,6 +17,7 @@ use function is_string;
 
 use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Silarhi\CapBundle\Form\CapMode;
 use Silarhi\CapBundle\Form\CapType;
 use Silarhi\CapBundle\Tests\Fixtures\TestKernel;
 use Silarhi\CapBundle\Validator\Cap;
@@ -111,7 +112,7 @@ final class CapTypeTest extends KernelTestCase
     {
         self::bootKernel();
 
-        $crawler = $this->render($this->createForm(['mode' => CapType::MODE_INVISIBLE]));
+        $crawler = $this->render($this->createForm(['mode' => CapMode::Invisible]));
         $input = $crawler->filter('input[name="form[cap]"]');
 
         self::assertCount(0, $crawler->filter('cap-widget'));
@@ -121,6 +122,15 @@ final class CapTypeTest extends KernelTestCase
         self::assertSame('https://cap.example.com/site-key/', $input->attr('data-cap-api-endpoint'));
         self::assertNull($input->attr('required'));
         self::assertCount(1, $crawler->filter('script[type="module"]'));
+    }
+
+    public function testAcceptsTheModeAsAString(): void
+    {
+        self::bootKernel();
+
+        $crawler = $this->render($this->createForm(['mode' => 'invisible']));
+
+        self::assertSame('invisible', $crawler->filter('input[name="form[cap]"]')->attr('data-silarhi-cap'));
     }
 
     public function testRejectsAnUnknownMode(): void

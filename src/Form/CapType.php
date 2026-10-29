@@ -15,11 +15,16 @@ namespace Silarhi\CapBundle\Form;
 
 use Override;
 use Silarhi\CapBundle\Validator\Cap;
+
+use function sprintf;
+
 use Symfony\Component\Asset\Packages;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
+use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
@@ -30,12 +35,6 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 final class CapType extends AbstractType
 {
-    /** The Cap widget: a checkbox the visitor ticks, solved in the background as soon as they interact with the page. */
-    public const MODE_CHECKBOX = 'checkbox';
-
-    /** Nothing visible: the challenge is solved when the visitor starts filling the form, or when they submit it. */
-    public const MODE_INVISIBLE = 'invisible';
-
     /** Where `assets:install` copies the script of the bundle (its public/ folder). */
     public const SCRIPT_PATH = 'bundles/silarhicap/cap.js';
 
@@ -61,9 +60,10 @@ final class CapType extends AbstractType
     #[Override]
     public function buildView(FormView $view, FormInterface $form, array $options): void
     {
-        /* @var array{mode: string, locale: string|null, worker_count: int|null, troubleshooting_url: string|null, i18n: array<string, string>, csp_nonce: string|null} $options */
         $view->vars['enabled'] = $this->enabled;
-        $view->vars['mode'] = $options['mode'];
+        /** @var CapMode $mode the normalizer of the option turns strings into the enum */
+        $mode = $options['mode'];
+        $view->vars['mode'] = $mode->value;
         $view->vars['endpoint'] = rtrim($this->endpoint, '/') . '/';
         $view->vars['locale'] = $options['locale'] ?? $this->requestStack?->getCurrentRequest()?->getLocale();
         $view->vars['worker_count'] = $options['worker_count'];
@@ -88,7 +88,7 @@ final class CapType extends AbstractType
             'error_bubbling' => false,
             'empty_data' => '',
             'constraints' => [new Cap()],
-            'mode' => self::MODE_CHECKBOX,
+            'mode' => CapMode::Checkbox,
             'locale' => null,
             'worker_count' => null,
             'troubleshooting_url' => null,
@@ -96,14 +96,18 @@ final class CapType extends AbstractType
             'csp_nonce' => null,
         ]);
 
-        $resolver->setAllowedValues('mode', [self::MODE_CHECKBOX, self::MODE_INVISIBLE]);
+        $resolver->setAllowedTypes('mode', [CapMode::class, 'string']);
+        // The string form stays for options set from Twig or from a configuration file
+        $resolver->setNormalizer('mode', static fn (Options $options, CapMode|string $mode): CapMode => $mode instanceof CapMode
+            ? $mode
+            : CapMode::tryFrom($mode) ?? throw new InvalidOptionsException(sprintf('The option "mode" with value "%s" is invalid. Accepted values are: "%s".', $mode, implode('", "', array_column(CapMode::cases(), 'value')))));
         $resolver->setAllowedTypes('locale', ['null', 'string']);
         $resolver->setAllowedTypes('worker_count', ['null', 'int']);
         $resolver->setAllowedTypes('troubleshooting_url', ['null', 'string']);
         $resolver->setAllowedTypes('i18n', 'string[]');
         $resolver->setAllowedTypes('csp_nonce', ['null', 'string']);
 
-        $resolver->setInfo('mode', '"checkbox" shows the Cap widget, "invisible" solves the challenge without any UI.');
+        $resolver->setInfo('mode', 'CapMode::Checkbox shows the Cap widget, CapMode::Invisible solves the challenge without any UI.');
         $resolver->setInfo('locale', 'Language of the widget labels (data-cap-lang). Defaults to the request locale.');
         $resolver->setInfo('i18n', 'Widget labels, keyed by the suffix of their data-cap-i18n-* attribute: ["initial-state" => "..."].');
         $resolver->setInfo('csp_nonce', 'Nonce of the <script> tag, and of the <style> the widget injects, for a strict Content-Security-Policy.');

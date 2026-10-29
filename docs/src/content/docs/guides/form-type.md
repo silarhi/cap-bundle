@@ -38,10 +38,15 @@ Nothing to see or click: the challenge is solved with Cap's [programmatic mode](
 when the visitor focuses a field of the form, and on submit if they were faster.
 
 ```php
+use Silarhi\CapBundle\Form\CapMode;
+
 $builder->add('captcha', CapType::class, [
-    'mode' => CapType::MODE_INVISIBLE,
+    'mode' => CapMode::Invisible,
 ]);
 ```
+
+The option also takes the enum's value, `'invisible'`, for the places a PHP enum cannot reach (a form type option
+read from a configuration file, for instance).
 
 ```html
 <input
@@ -62,17 +67,17 @@ Invisible mode needs the JavaScript of the bundle, the checkbox mode only needs 
 
 ## Options
 
-| Option                | Default            | Description                                                                                                   |
-| --------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `mode`                | `'checkbox'`       | `CapType::MODE_CHECKBOX` or `CapType::MODE_INVISIBLE`                                                         |
-| `locale`              | the request locale | Language of the widget labels (`data-cap-lang`): see [labels and languages](/guides/translations/)            |
-| `i18n`                | `[]`               | Widget labels, keyed by the suffix of their `data-cap-i18n-*` attribute                                       |
-| `worker_count`        | `null`             | Number of solver workers (`data-cap-worker-count`); Cap uses one per CPU core                                 |
-| `troubleshooting_url` | `null`             | The "Troubleshooting" link Cap shows a blocked visitor (`data-cap-troubleshooting-url`)                       |
-| `csp_nonce`           | `null`             | Nonce of the script and of the widget styles: see [Content Security Policy](/guides/content-security-policy/) |
-| `constraints`         | `[new Cap()]`      | Replace it to customize the messages: `[new Cap(message: '…', missingMessage: '…')]`                          |
-| `attr`                | `[]`               | Attributes of the `<cap-widget>` (or of the hidden input), e.g. a `class`                                     |
-| `required`            | `true`             | Checkbox mode: the browser asks to tick the widget before submitting                                          |
+| Option                | Default             | Description                                                                                                   |
+| --------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `mode`                | `CapMode::Checkbox` | `CapMode::Checkbox` or `CapMode::Invisible` (or their values, `'checkbox'` and `'invisible'`)                 |
+| `locale`              | the request locale  | Language of the widget labels (`data-cap-lang`): see [labels and languages](/guides/translations/)            |
+| `i18n`                | `[]`                | Widget labels, keyed by the suffix of their `data-cap-i18n-*` attribute                                       |
+| `worker_count`        | `null`              | Number of solver workers (`data-cap-worker-count`); Cap uses one per CPU core                                 |
+| `troubleshooting_url` | `null`              | The "Troubleshooting" link Cap shows a blocked visitor (`data-cap-troubleshooting-url`)                       |
+| `csp_nonce`           | `null`              | Nonce of the script and of the widget styles: see [Content Security Policy](/guides/content-security-policy/) |
+| `constraints`         | `[new Cap()]`       | Replace it to customize the messages: `[new Cap(message: '…', missingMessage: '…')]`                          |
+| `attr`                | `[]`                | Attributes of the `<cap-widget>` (or of the hidden input), e.g. a `class`                                     |
+| `required`            | `true`              | Checkbox mode: the browser asks to tick the widget before submitting                                          |
 
 `mapped` is `false` and `label` is `false` by default: the widget carries its own label.
 
