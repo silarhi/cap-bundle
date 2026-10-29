@@ -13,20 +13,25 @@ declare(strict_types=1);
 
 namespace Silarhi\CapBundle\Verifier;
 
+use function is_array;
 use function is_string;
+use function json_decode;
+use function json_encode;
 
+use JsonException;
 use Override;
+use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
 use SensitiveParameter;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+/**
+ * Redeems tokens with any PSR-18 HTTP client: Symfony's psr18.http_client by default, Guzzle, Buzz...
+ */
 final readonly class CapVerifier implements CapVerifierInterface
 {
-    private HttpClientInterface $httpClient;
-
     /**
      * @param string $verifyUrl the /siteverify URL of the site key, e.g. https://cap.example.com/<site-key>/siteverify
      */
@@ -34,10 +39,11 @@ final readonly class CapVerifier implements CapVerifierInterface
         private string $verifyUrl,
         #[SensitiveParameter]
         private string $secretKey,
-        ?HttpClientInterface $httpClient = null,
+        private ClientInterface $httpClient,
+        private RequestFactoryInterface $requestFactory,
+        private StreamFactoryInterface $streamFactory,
         private ?LoggerInterface $logger = null,
     ) {
-        $this->httpClient = $httpClient ?? HttpClient::create();
     }
 
     /**
@@ -48,11 +54,20 @@ final readonly class CapVerifier implements CapVerifierInterface
         string $endpoint,
         #[SensitiveParameter]
         string $secretKey,
-        ?string $verifyUrl = null,
-        ?HttpClientInterface $httpClient = null,
+        ?string $verifyUrl,
+        ClientInterface $httpClient,
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory,
         ?LoggerInterface $logger = null,
     ): self {
-        return new self($verifyUrl ?? rtrim($endpoint, '/') . '/siteverify', $secretKey, $httpClient, $logger);
+        return new self(
+            $verifyUrl ?? rtrim($endpoint, '/') . '/siteverify',
+            $secretKey,
+            $httpClient,
+            $requestFactory,
+            $streamFactory,
+            $logger,
+        );
     }
 
     #[Override]
@@ -62,36 +77,43 @@ final readonly class CapVerifier implements CapVerifierInterface
             return VerificationResult::failure(VerificationResult::ERROR_MISSING_RESPONSE);
         }
 
+        $request = $this->requestFactory->createRequest('POST', $this->verifyUrl)
+            ->withHeader('Content-Type', 'application/json')
+            ->withHeader('Accept', 'application/json')
+            ->withBody($this->streamFactory->createStream(json_encode(
+                ['secret' => $this->secretKey, 'response' => $token],
+                \JSON_THROW_ON_ERROR,
+            )));
+
         try {
-            $response = $this->httpClient->request('POST', $this->verifyUrl, [
-                'json' => ['secret' => $this->secretKey, 'response' => $token],
-            ]);
-
-            if ($response->getStatusCode() >= 500) {
-                $this->logger?->error('Cap server answered {status} to the token verification.', [
-                    'status' => $response->getStatusCode(),
-                    'url' => $this->verifyUrl,
-                ]);
-
-                return VerificationResult::failure(VerificationResult::ERROR_BAD_RESPONSE);
-            }
-
-            // Cap answers 4xx with a JSON body for invalid tokens: read it instead of throwing
-            $data = $response->toArray(false);
-        } catch (DecodingExceptionInterface $e) {
-            $this->logger?->error('Cap server answered an invalid JSON to the token verification.', [
-                'exception' => $e,
-                'url' => $this->verifyUrl,
-            ]);
-
-            return VerificationResult::failure(VerificationResult::ERROR_INVALID_JSON);
-        } catch (ExceptionInterface $e) {
+            $response = $this->httpClient->sendRequest($request);
+        } catch (ClientExceptionInterface $e) {
             $this->logger?->error('Cap server could not be reached to verify the token.', [
                 'exception' => $e,
                 'url' => $this->verifyUrl,
             ]);
 
             return VerificationResult::failure(VerificationResult::ERROR_CONNECTION_FAILED);
+        }
+
+        if ($response->getStatusCode() >= 500) {
+            $this->logger?->error('Cap server answered {status} to the token verification.', [
+                'status' => $response->getStatusCode(),
+                'url' => $this->verifyUrl,
+            ]);
+
+            return VerificationResult::failure(VerificationResult::ERROR_BAD_RESPONSE);
+        }
+
+        // Cap answers 4xx with a JSON body for invalid tokens: PSR-18 clients return them as they are
+        try {
+            $data = json_decode((string) $response->getBody(), true, 512, \JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            return $this->invalidJson($response->getStatusCode(), $e);
+        }
+
+        if (!is_array($data)) {
+            return $this->invalidJson($response->getStatusCode());
         }
 
         if (true === ($data['success'] ?? null)) {
@@ -104,5 +126,16 @@ final readonly class CapVerifier implements CapVerifierInterface
         $this->logger?->info('Cap token rejected: {error}.', ['error' => $result->error]);
 
         return $result;
+    }
+
+    private function invalidJson(int $status, ?JsonException $exception = null): VerificationResult
+    {
+        $this->logger?->error('Cap server answered an invalid JSON to the token verification.', [
+            'exception' => $exception,
+            'status' => $status,
+            'url' => $this->verifyUrl,
+        ]);
+
+        return VerificationResult::failure(VerificationResult::ERROR_INVALID_JSON);
     }
 }

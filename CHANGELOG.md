@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `worker_count`, `troubleshooting_url`, `i18n`, `csp_nonce`.
 - The `Cap` constraint and `CapVerifierInterface`, which redeem a token against the `/siteverify` endpoint of the Cap
   server, for JSON endpoints and DTOs. A Cap server out of reach rejects the token.
+- Any PSR-18 HTTP client and PSR-17 factories (`http_client`, `request_factory`, `stream_factory`), Symfony's
+  `psr18.http_client` by default.
 - The submit handling, delegated to the document: an unsolved challenge is solved before the form is submitted, the
   invisible one as soon as the visitor focuses the form. Tokens are forgotten after a Turbo submission, before Turbo
   caches the page and when the back-forward cache restores it.

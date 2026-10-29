@@ -61,6 +61,8 @@ public function __invoke(Request $request): Response
 ```
 
 `verify()` never throws: a Cap server out of reach is a failed verification with the `connection-failed` error.
+It sends the request with the [PSR-18 client](/getting-started/configuration/#the-http-client) of the
+configuration.
 Unlike the constraint, it ignores `enabled: false`.
 
 | `VerificationResult::$error` | Meaning                                           |

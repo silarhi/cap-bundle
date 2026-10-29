@@ -16,8 +16,11 @@ cap:
     verify_url: null
     # false renders no widget and accepts every submission: for the test environment
     enabled: true
-    # The HTTP client service calling /siteverify: a scoped client to set a timeout or a proxy
-    http_client: 'http_client'
+    # PSR-18 HTTP client service ID calling /siteverify. null: Symfony's psr18.http_client
+    http_client: null
+    # PSR-17 request and stream factory service IDs. null: the HTTP client (psr18.http_client is both)
+    request_factory: null
+    stream_factory: null
     # Renders the <script> of the bundle with each widget. false with the Stimulus controller or your own install()
     render_scripts: true
     widget:
@@ -41,10 +44,24 @@ cap:
     verify_url: 'http://cap:3000/%env(CAP_SITE_KEY)%/siteverify'
 ```
 
-## Timeouts and proxies
+## The HTTP client
 
-Requests to `/siteverify` go through the `http_client` service. Point `http_client` to a
-[scoped client](https://symfony.com/doc/current/http_client.html#scoping-client) to tune them:
+The token is redeemed with a [PSR-18](https://www.php-fig.org/psr/psr-18/) HTTP client: Symfony's
+`psr18.http_client` by default, which FrameworkBundle registers on top of `symfony/http-client`. It needs a PSR-17
+implementation such as `nyholm/psr7` (or `php-http/discovery` with one). Set `http_client`, `request_factory` and
+`stream_factory` to your own service IDs to use another client. Guzzle, for instance (both classes registered as
+services):
+
+```yaml
+cap:
+    http_client: 'GuzzleHttp\Client'
+    request_factory: 'GuzzleHttp\Psr7\HttpFactory'
+    stream_factory: 'GuzzleHttp\Psr7\HttpFactory'
+```
+
+### Timeouts and proxies
+
+Wrap a [scoped client](https://symfony.com/doc/current/http_client.html#scoping-client) in a `Psr18Client`:
 
 ```yaml
 framework:
@@ -54,8 +71,13 @@ framework:
                 base_uri: 'https://cap.example.com'
                 timeout: 3
 
+services:
+    cap.psr18_client:
+        class: Symfony\Component\HttpClient\Psr18Client
+        arguments: ['@cap.client']
+
 cap:
-    http_client: 'cap.client'
+    http_client: 'cap.psr18_client'
 ```
 
 A Cap server out of reach, answering a 5xx or something else than JSON rejects the submission (the bundle fails

@@ -12,7 +12,8 @@ Stimulus or no build step at all.
 ## Tech Stack
 
 - **Language**: PHP 8.2+, TypeScript (`assets/`)
-- **Framework**: Symfony 6.4 / 7.x / 8.x (`symfony/form`, `symfony/validator`, `symfony/http-client`)
+- **Framework**: Symfony 6.4 / 7.x / 8.x (`symfony/form`, `symfony/validator`), PSR-18 / PSR-17 for `/siteverify`
+  (Symfony's `psr18.http_client` by default, which needs `symfony/http-client` and a PSR-17 implementation)
 - **Optional**: `symfony/twig-bundle` (form theme), `symfony/asset` (versioned script URL), StimulusBundle
 - **JavaScript**: `cap-widget` (peer), `@hotwired/stimulus` (optional peer); built with tsdown, tested with Vitest
 
@@ -23,7 +24,8 @@ src/
 ├── Form/CapType.php         # The field: view vars, options (mode, locale, worker_count, troubleshooting_url, i18n, csp_nonce)
 ├── Form/CapMode.php         # Enum of the mode option (Checkbox, Invisible); CapType's normalizer also takes its values
 ├── Validator/               # Cap constraint (#[Cap]) and CapValidator (enabled: false accepts everything)
-├── Verifier/                # CapVerifierInterface, CapVerifier (HTTP client, never throws), VerificationResult
+├── Verifier/                # CapVerifierInterface, CapVerifier (PSR-18 client + PSR-17 factories, never throws),
+│                            #   VerificationResult
 └── SilarhiCapBundle.php     # `cap:` configuration tree (extensionAlias), `cap.*` services, prepends the form theme
                              #   and the AssetMapper path
 templates/form/cap_widget.html.twig  # silarhi_cap_widget block: <cap-widget> or <input type="hidden"> + <script type="module">
@@ -94,8 +96,12 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   `@symfony/stimulus-bridge` resolve `<package>/package.json`, then `<package>/<main of the controller>`; without
   them the build fails with "cannot find @silarhi/cap-bundle/package.json".
 - **Fails closed**: `CapVerifier::verify()` never throws; transport, 5xx and non-JSON answers are failed verifications.
-- Optional services (`assets.packages`, `request_stack`, `logger`, the HTTP client) are injected with
-  `ignoreOnInvalid()`: `CapVerifier` falls back to `HttpClient::create()`.
+- **PSR-18 like picasso-bundle**: `http_client` (default `psr18.http_client`), `request_factory` and `stream_factory`
+  (default: the client, which `Psr18Client` also is). `symfony/http-client` stays required so that
+  `psr18.http_client` exists when the bundle is installed; its PSR-17 implementation (`nyholm/psr7`) is only
+  suggested, as in picasso-bundle. Tests go through the real chain: `framework.http_client.mock_response_factory`
+  (`tests/Fixtures/CapServerMock.php`).
+- Optional services (`assets.packages`, `request_stack`, `logger`) are injected with `ignoreOnInvalid()`.
 
 ## Coding Conventions
 

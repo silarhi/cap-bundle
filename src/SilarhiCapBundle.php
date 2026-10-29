@@ -65,9 +65,16 @@ final class SilarhiCapBundle extends AbstractBundle
                     ->info('false renders no widget and accepts every submission: for the test environment.')
                 ->end()
                 ->scalarNode('http_client')
-                    ->defaultValue('http_client')
-                    ->cannotBeEmpty()
-                    ->info('The HTTP client service calling /siteverify: a scoped client to set a timeout or a proxy.')
+                    ->defaultNull()
+                    ->info('PSR-18 HTTP client service ID calling /siteverify. Defaults to Symfony\'s psr18.http_client.')
+                ->end()
+                ->scalarNode('request_factory')
+                    ->defaultNull()
+                    ->info('PSR-17 request factory service ID. Defaults to the HTTP client (psr18.http_client is one).')
+                ->end()
+                ->scalarNode('stream_factory')
+                    ->defaultNull()
+                    ->info('PSR-17 stream factory service ID. Defaults to the HTTP client (psr18.http_client is one).')
                 ->end()
                 ->booleanNode('render_scripts')
                     ->defaultTrue()
@@ -123,11 +130,16 @@ final class SilarhiCapBundle extends AbstractBundle
          *     secret_key: string,
          *     verify_url: string|null,
          *     enabled: bool,
-         *     http_client: string,
+         *     http_client: string|null,
+         *     request_factory: string|null,
+         *     stream_factory: string|null,
          *     render_scripts: bool,
          *     widget: array{script: string|null, wasm_url: string|null, hashwx_url: string|null},
          * } $config */
         $services = $container->services();
+
+        // FrameworkBundle registers psr18.http_client when symfony/http-client and psr/http-client are installed
+        $httpClient = $config['http_client'] ?? 'psr18.http_client';
 
         // The endpoint is often an env var: its trailing slash can only be normalized at runtime
         $services->set('cap.verifier', CapVerifier::class)
@@ -136,7 +148,9 @@ final class SilarhiCapBundle extends AbstractBundle
                 $config['endpoint'],
                 $config['secret_key'],
                 $config['verify_url'],
-                service($config['http_client'])->ignoreOnInvalid(),
+                service($httpClient),
+                service($config['request_factory'] ?? $httpClient),
+                service($config['stream_factory'] ?? $httpClient),
                 service('logger')->ignoreOnInvalid(),
             ])
             ->tag('monolog.logger', ['channel' => 'cap']);

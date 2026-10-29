@@ -46,12 +46,13 @@
 
 - PHP 8.2+
 - Symfony 6.4, 7.x or 8.x
+- A PSR-18 HTTP client: Symfony's, with a PSR-17 implementation such as `nyholm/psr7`, or your own
 - A [Cap Standalone](https://trycap.dev/guide/standalone/) server, and a site key created in its dashboard
 
 ## Installation
 
 ```bash
-composer require silarhi/cap-bundle
+composer require silarhi/cap-bundle nyholm/psr7
 ```
 
 ```dotenv
