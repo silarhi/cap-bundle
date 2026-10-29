@@ -35,11 +35,12 @@ translations/                # validators.<locale>.xlf: cap.validation.missing /
 assets/
 ├── src/core.ts              # install(), configure(), loadWidget(), solve(), reset(): listeners delegated to the
 │                            #   document. Knows no framework: anything Turbo-specific (or htmx...) goes in an adapter
-├── src/controller.ts        # Stimulus controller (silarhi--cap-bundle--cap): configure + install + adapters +
-│                            #   loadWidget (imports the URL of data-silarhi-cap-script, not the npm package)
+├── src/connect.ts           # connect(): install + adapters + configure + loadWidget (imports the URL of
+│                            #   data-silarhi-cap-script, not the npm package), for any listener library
+├── src/controller.ts        # Stimulus controller (silarhi--cap-bundle--cap): connect() on connect
 ├── src/adapters/            # Opt-in framework adapters: turbo.ts (installTurbo), live.ts (installLive),
 │                            #   index.ts (installAdapters: data-silarhi-cap-adapters, from cap.adapters)
-├── src/auto.ts              # Built to public/cap.js: install + adapters + configure + loadWidget
+├── src/auto.ts              # Built to public/cap.js: install + connect() of the first challenge
 ├── scripts/copy-widget.mjs  # Run by `pnpm build`: copies cap-widget and @cap.js/wasm to public/widget/, fails when
 │                            #   the WASM version cap-widget expects is not the one installed
 ├── src/index.ts             # npm entry (@silarhi/cap-bundle)
