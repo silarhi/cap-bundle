@@ -74,7 +74,7 @@ final class CapValidatorTest extends ConstraintValidatorTestCase
     {
         $this->validator->validate(null, new Cap());
 
-        $this->buildViolation('Please verify you are human.')
+        $this->buildViolation('cap.validation.missing')
             ->setCode(Cap::MISSING_ERROR)
             ->assertRaised();
         self::assertSame([], $this->verified);

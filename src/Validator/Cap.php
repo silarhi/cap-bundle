@@ -34,9 +34,9 @@ final class Cap extends Constraint
         self::INVALID_ERROR => 'INVALID_ERROR',
     ];
 
-    public string $missingMessage = 'Please verify you are human.';
+    public string $missingMessage = 'cap.validation.missing';
 
-    public string $message = 'The human verification failed, please try again.';
+    public string $message = 'cap.validation.invalid';
 
     /**
      * @param string[]|null $groups
