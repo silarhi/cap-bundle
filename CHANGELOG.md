@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `CAP_ENDPOINT` and `CAP_SECRET_KEY` env vars as the default `endpoint` and `secret_key`: installing the bundle
   needs no configuration file.
 - `widget.script`, `widget.wasm_url` and `widget.hashwx_url` to serve the widget and its solver from your domain.
-- Validation messages in English, French, German, Spanish, Italian, Dutch and Portuguese.
+- Validation messages as translation keys of the `validators` domain (`cap.validation.missing`,
+  `cap.validation.invalid`), translated in English, French, German, Spanish, Italian, Dutch and Portuguese.
 
 [0.1.0]: https://github.com/silarhi/cap-bundle/commits/HEAD

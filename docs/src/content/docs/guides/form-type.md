@@ -85,10 +85,10 @@ Invisible mode needs the JavaScript of the bundle, the checkbox mode only needs 
 
 Errors stay on the field (`error_bubbling` is `false`): `form_row(form.captcha)` renders them under the widget.
 
-| Code                 | Message                                          | When                                            |
-| -------------------- | ------------------------------------------------ | ----------------------------------------------- |
-| `Cap::MISSING_ERROR` | Please verify you are human.                     | No token submitted                              |
-| `Cap::INVALID_ERROR` | The human verification failed, please try again. | Cap rejected the token, or could not be reached |
+| Code                 | Message key              | English                                          | When                                            |
+| -------------------- | ------------------------ | ------------------------------------------------ | ----------------------------------------------- |
+| `Cap::MISSING_ERROR` | `cap.validation.missing` | Please verify you are human.                     | No token submitted                              |
+| `Cap::INVALID_ERROR` | `cap.validation.invalid` | The human verification failed, please try again. | Cap rejected the token, or could not be reached |
 
 `{{ error }}` in a custom message is Cap's reason (`"Token expired"`, `"Token not found"`…) or the bundle's
 (`connection-failed`, `bad-response`, `invalid-json`).

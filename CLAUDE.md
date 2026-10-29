@@ -29,7 +29,8 @@ src/
 └── SilarhiCapBundle.php     # `cap:` configuration tree (extensionAlias), `cap.*` services, prepends the form theme
                              #   and the AssetMapper path
 templates/form/cap_widget.html.twig  # silarhi_cap_widget block: <cap-widget> or <input type="hidden"> + <script type="module">
-translations/                # validators.<locale>.xlf: the two constraint messages
+translations/                # validators.<locale>.xlf: cap.validation.missing / cap.validation.invalid (keys, not
+                             #   English sentences: the translator is needed)
 assets/
 ├── src/core.ts              # install(), configure(), solve(), reset(): listeners delegated to the document
 ├── src/controller.ts        # Stimulus controller (silarhi--cap-bundle--cap): configure + install + import('cap-widget')

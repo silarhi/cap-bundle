@@ -64,6 +64,7 @@
         "nyholm/psr7": "PSR-17 implementation that Symfony's psr18.http_client (the default HTTP client) needs, unless php-http/discovery finds another one",
         "symfony/asset": "Versions the URL of the bundle's script (bundles/silarhicap/cap.js) like your other assets",
         "symfony/framework-bundle": "Register Silarhi\\CapBundle\\SilarhiCapBundle for zero-config service wiring",
+        "symfony/translation": "Translates the validation messages, which are translation keys (cap.validation.*)",
         "symfony/twig-bundle": "Renders the CapType widget: the bundle adds its form theme to twig.form_themes"
     },
     "autoload": {

@@ -31,13 +31,16 @@ The keys are `initial-state`, `verifying-label`, `solved-label`, `error-label`, 
 
 ## Validation messages
 
-The two messages of the `Cap` constraint are translated in the `validators` domain, in English, French, German,
-Spanish, Italian, Dutch and Portuguese. Override them in your own `translations/validators.<locale>.xlf`:
+The two messages of the `Cap` constraint are translation keys of the `validators` domain, `cap.validation.missing`
+and `cap.validation.invalid`, translated in English, French, German, Spanish, Italian, Dutch and Portuguese. They
+need the translator (`framework.translator`, enabled by `symfony/translation`): without it, the key itself is shown.
+
+Override them in your own `translations/validators.<locale>.yaml`:
 
 ```yaml
 # translations/validators.fr.yaml
-'Please verify you are human.': 'Cochez la case « Je ne suis pas un robot ».'
-'The human verification failed, please try again.': 'Vérification impossible, réessayez.'
+cap.validation.missing: 'Cochez la case « Je ne suis pas un robot ».'
+cap.validation.invalid: 'Vérification impossible, réessayez.'
 ```
 
 Or pass other messages to the constraint:

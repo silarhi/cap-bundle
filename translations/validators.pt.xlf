@@ -2,12 +2,12 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
     <file source-language="en" target-language="pt" datatype="plaintext" original="file.ext">
         <body>
-            <trans-unit id="silarhi_cap.missing">
-                <source>Please verify you are human.</source>
+            <trans-unit id="cap.validation.missing" resname="cap.validation.missing">
+                <source>cap.validation.missing</source>
                 <target>Confirme que é humano.</target>
             </trans-unit>
-            <trans-unit id="silarhi_cap.invalid">
-                <source>The human verification failed, please try again.</source>
+            <trans-unit id="cap.validation.invalid" resname="cap.validation.invalid">
+                <source>cap.validation.invalid</source>
                 <target>A verificação falhou, tente novamente.</target>
             </trans-unit>
         </body>
