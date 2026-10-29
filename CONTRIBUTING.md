@@ -46,7 +46,7 @@ commit; Renovate's pull requests are rebuilt by a workflow.
 ```bash
 cd assets
 pnpm install
-pnpm test       # Vitest
+pnpm test       # Vitest (pnpm test:coverage writes coverage/)
 pnpm lint       # Biome
 pnpm typecheck
 pnpm build      # assets/dist, public/cap.js and public/widget/

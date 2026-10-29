@@ -84,6 +84,8 @@ final class TestKernel extends Kernel
             'translator' => ['enabled' => true, 'default_path' => '%kernel.project_dir%/tests/Fixtures/translations'],
             'assets' => ['enabled' => true, 'version' => 'v1'],
             'http_client' => ['mock_response_factory' => 'test.cap_server'],
+            // Enabled by default once installed: only the "asset_mapper" environment uses it
+            'asset_mapper' => ['enabled' => 'asset_mapper' === $this->getEnvironment()],
         ]);
 
         $container->extension('twig', [
@@ -127,6 +129,9 @@ final class TestKernel extends Kernel
         // Nothing in the kernel uses them: the container would remove them before the tests get them
         foreach (['form.factory', 'twig', 'validator', 'translator', 'request_stack'] as $id) {
             $services->alias('test.' . $id, $id)->public();
+        }
+        if ('asset_mapper' === $this->getEnvironment()) {
+            $services->alias('test.asset_mapper', 'asset_mapper')->public();
         }
     }
 }
