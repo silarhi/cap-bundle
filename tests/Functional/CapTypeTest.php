@@ -88,7 +88,8 @@ final class CapTypeTest extends KernelTestCase
         self::assertNotNull($assetMapper->getAsset('@silarhi/cap-bundle/controller.js'), 'StimulusBundle imports the controller from there');
 
         $src = $this->render($this->createForm())->filter('script')->attr('src');
-        self::assertMatchesRegularExpression('#^/assets/bundles/silarhicap/cap-[\w-]+\.js$#', (string) $src);
+        // Symfony 6.4.0 also appends the version of the default package
+        self::assertMatchesRegularExpression('#^/assets/bundles/silarhicap/cap-[\w-]+\.js(\?v1)?$#', (string) $src);
     }
 
     public function testRendersTheOptions(): void
