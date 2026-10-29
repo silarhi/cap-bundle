@@ -11,13 +11,13 @@ The default. `CapType` renders Cap's widget: a checkbox reading _“Verify you'r
 background as soon as the visitor moves the mouse or presses a key, so ticking it is usually instant.
 
 ```php
-$builder->add('cap', CapType::class);
+$builder->add('captcha', CapType::class);
 ```
 
 ```html
 <cap-widget
-    id="contact_cap"
-    data-cap-hidden-field-name="contact[cap]"
+    id="contact_captcha"
+    data-cap-hidden-field-name="contact[captcha]"
     required
     data-controller="silarhi--cap-bundle--cap"
     data-silarhi-cap="checkbox"
@@ -27,7 +27,7 @@ $builder->add('cap', CapType::class);
 <script type="module" src="/bundles/silarhicap/cap.js"></script>
 ```
 
-The widget creates the hidden `contact[cap]` input itself and fills it once solved: the token is submitted with the
+The widget creates the hidden `contact[captcha]` input itself and fills it once solved: the token is submitted with the
 other fields. While the field is `required` (the default), the browser refuses to submit an unticked widget and shows
 _“Please verify you're human”_. With `'required' => false`, or in a `novalidate` form, the bundle solves it on submit
 instead.
@@ -38,7 +38,7 @@ Nothing to see or click: the challenge is solved with Cap's [programmatic mode](
 when the visitor focuses a field of the form, and on submit if they were faster.
 
 ```php
-$builder->add('cap', CapType::class, [
+$builder->add('captcha', CapType::class, [
     'mode' => CapType::MODE_INVISIBLE,
 ]);
 ```
@@ -46,8 +46,8 @@ $builder->add('cap', CapType::class, [
 ```html
 <input
     type="hidden"
-    id="contact_cap"
-    name="contact[cap]"
+    id="contact_captcha"
+    name="contact[captcha]"
     data-silarhi-cap="invisible"
     data-cap-api-endpoint="https://cap.example.com/site-key/"
     ...
@@ -78,7 +78,7 @@ Invisible mode needs the JavaScript of the bundle, the checkbox mode only needs 
 
 ## Errors
 
-Errors stay on the field (`error_bubbling` is `false`): `form_row(form.cap)` renders them under the widget.
+Errors stay on the field (`error_bubbling` is `false`): `form_row(form.captcha)` renders them under the widget.
 
 | Code                 | Message                                          | When                                            |
 | -------------------- | ------------------------------------------------ | ----------------------------------------------- |

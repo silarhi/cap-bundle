@@ -20,13 +20,13 @@ Pass the nonce of the request to the field, for instance the one of
 [NelmioSecurityBundle](https://github.com/nelmio/NelmioSecurityBundle):
 
 ```twig
-{{ form_row(form.cap, { csp_nonce: csp_nonce('script') }) }}
+{{ form_row(form.captcha, { csp_nonce: csp_nonce('script') }) }}
 ```
 
 or from the form type:
 
 ```php
-$builder->add('cap', CapType::class, ['csp_nonce' => $this->nonceGenerator->getNonce()]);
+$builder->add('captcha', CapType::class, ['csp_nonce' => $this->nonceGenerator->getNonce()]);
 ```
 
 The nonce goes on the `<script>` of the bundle, and to `window.CAP_CSS_NONCE` and `window.CAP_SCRIPT_NONCE`, which the

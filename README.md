@@ -74,7 +74,7 @@ use Silarhi\CapBundle\Form\CapType;
 
 $builder
     ->add('message', TextareaType::class)
-    ->add('cap', CapType::class);
+    ->add('captcha', CapType::class);
 ```
 
 `{{ form(form) }}` renders the widget and its script. On submit, the token is redeemed against your Cap server: a

@@ -11,13 +11,13 @@ Cap translates its own labels. The bundle passes the request locale as `data-cap
 language of the page. Override it per field:
 
 ```php
-$builder->add('cap', CapType::class, ['locale' => 'de']);
+$builder->add('captcha', CapType::class, ['locale' => 'de']);
 ```
 
 Or replace any label with the `i18n` option, keyed by the suffix of Cap's `data-cap-i18n-*` attributes:
 
 ```php
-$builder->add('cap', CapType::class, [
+$builder->add('captcha', CapType::class, [
     'i18n' => [
         'initial-state' => $this->translator->trans('cap.verify'),
         'solved-label' => $this->translator->trans('cap.solved'),
@@ -45,7 +45,7 @@ Or pass other messages to the constraint:
 ```php
 use Silarhi\CapBundle\Validator\Cap;
 
-$builder->add('cap', CapType::class, [
+$builder->add('captcha', CapType::class, [
     'constraints' => [new Cap(message: 'cap.failed', missingMessage: 'cap.missing')],
 ]);
 ```

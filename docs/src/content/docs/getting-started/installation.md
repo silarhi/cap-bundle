@@ -76,15 +76,15 @@ final class ContactType extends AbstractType
         $builder
             ->add('email', EmailType::class)
             ->add('message', TextareaType::class)
-            ->add('cap', CapType::class);
+            ->add('captcha', CapType::class);
     }
 }
 ```
 
 That's it:
 
-- `{{ form(form) }}` (or `{{ form_row(form.cap) }}`) renders Cap's checkbox and the script of the bundle;
-- the widget solves the challenge and posts the token as `contact[cap]`;
+- `{{ form(form) }}` (or `{{ form_row(form.captcha) }}`) renders Cap's checkbox and the script of the bundle;
+- the widget solves the challenge and posts the token as `contact[captcha]`;
 - `$form->isValid()` redeems the token against your Cap server. A missing or rejected token is an error on the
   field: _“Please verify you are human.”_ or _“The human verification failed, please try again.”_
 
