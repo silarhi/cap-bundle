@@ -65,8 +65,10 @@ final class CapTypeTest extends KernelTestCase
         self::assertSame('checkbox', $widget->attr('data-silarhi-cap'));
         self::assertSame('https://cap.example.com/site-key/', $widget->attr('data-cap-api-endpoint'));
         self::assertSame('fr', $widget->attr('data-cap-lang'));
-        self::assertSame('https://cdn.jsdelivr.net/npm/cap-widget@0.1.58', $widget->attr('data-silarhi-cap-script'));
-        self::assertNull($widget->attr('data-silarhi-cap-wasm-url'));
+        // The copies of the widget the bundle ships, versioned like any asset
+        self::assertSame('/bundles/silarhicap/widget/cap.min.js?v1', $widget->attr('data-silarhi-cap-script'));
+        self::assertSame('/bundles/silarhicap/widget/cap_wasm_bg.wasm?v1', $widget->attr('data-silarhi-cap-wasm-url'));
+        self::assertSame('/bundles/silarhicap/widget/hashwx.wasm?v1', $widget->attr('data-silarhi-cap-hashwx-url'));
         self::assertNull($widget->attr('data-silarhi-cap-adapters'), 'Adapters are opt-in');
         self::assertNull($widget->attr('data-cap-worker-count'));
         self::assertCount(0, $crawler->filter('label'));
@@ -227,9 +229,10 @@ final class CapTypeTest extends KernelTestCase
         $widget = $crawler->filter('cap-widget');
 
         self::assertCount(0, $crawler->filter('script'));
-        self::assertNull($widget->attr('data-silarhi-cap-script'));
-        self::assertSame('/cap/cap_wasm_bg.wasm', $widget->attr('data-silarhi-cap-wasm-url'));
-        self::assertSame('/cap/hashwx.wasm', $widget->attr('data-silarhi-cap-hashwx-url'));
+        // The Stimulus controller loads the widget when the bundle's script is not rendered
+        self::assertSame('https://cap.example.com/assets/widget.js', $widget->attr('data-silarhi-cap-script'));
+        self::assertSame('/cap/cap_wasm_bg.wasm?v1', $widget->attr('data-silarhi-cap-wasm-url'));
+        self::assertNull($widget->attr('data-silarhi-cap-hashwx-url'), 'null leaves the widget to its default');
         self::assertSame('turbo', $widget->attr('data-silarhi-cap-adapters'));
 
         $form = $this->createForm();

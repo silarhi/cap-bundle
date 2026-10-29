@@ -38,12 +38,23 @@ final class CapType extends AbstractType
     /** Where `assets:install` copies the script of the bundle (its public/ folder). */
     public const SCRIPT_PATH = 'bundles/silarhicap/cap.js';
 
+    /** The cap-widget release the bundle ships and is tested against, and its WebAssembly solvers. */
+    public const WIDGET_SCRIPT_PATH = 'bundles/silarhicap/widget/cap.min.js';
+
+    public const WASM_PATH = 'bundles/silarhicap/widget/cap_wasm_bg.wasm';
+
+    public const HASHWX_PATH = 'bundles/silarhicap/widget/hashwx.wasm';
+
     /**
+     * The widget settings are asset paths or URLs.
+     *
      * @param string       $endpoint      the API endpoint of the site key, e.g. https://cap.example.com/<site-key>/
      * @param bool         $enabled       false renders nothing (and the validator accepts everything)
      * @param bool         $renderScripts renders the <script> of the bundle next to the widget
-     * @param string|null  $widgetScript  URL of the cap-widget script, loaded by the bundle's script; null when the
-     *                                    application imports cap-widget itself
+     * @param string|null  $widgetScript  the cap-widget script, loaded by the bundle's script or its Stimulus
+     *                                    controller; null when the application imports cap-widget itself
+     * @param string|null  $wasmUrl       the cap_wasm_bg.wasm solver; null for the widget's default
+     * @param string|null  $hashwxUrl     the hashwx.wasm solver; null for the widget's default
      * @param list<string> $adapters      the JavaScript adapters to install, e.g. ["turbo"]
      */
     public function __construct(
@@ -72,13 +83,12 @@ final class CapType extends AbstractType
         $view->vars['troubleshooting_url'] = $options['troubleshooting_url'];
         $view->vars['i18n'] = $options['i18n'];
         $view->vars['csp_nonce'] = $options['csp_nonce'];
-        $view->vars['wasm_url'] = $this->wasmUrl;
-        $view->vars['hashwx_url'] = $this->hashwxUrl;
+        $view->vars['wasm_url'] = $this->assetUrl($this->wasmUrl);
+        $view->vars['hashwx_url'] = $this->assetUrl($this->hashwxUrl);
         $view->vars['adapters'] = [] === $this->adapters ? null : implode(' ', $this->adapters);
-        $view->vars['widget_script'] = $this->renderScripts ? $this->widgetScript : null;
-        $view->vars['script_url'] = $this->renderScripts
-            ? ($this->packages?->getUrl(self::SCRIPT_PATH) ?? '/' . self::SCRIPT_PATH)
-            : null;
+        // The Stimulus controller loads it too: rendered with or without the bundle's script
+        $view->vars['widget_script'] = $this->assetUrl($this->widgetScript);
+        $view->vars['script_url'] = $this->renderScripts ? $this->assetUrl(self::SCRIPT_PATH) : null;
     }
 
     #[Override]
@@ -114,6 +124,21 @@ final class CapType extends AbstractType
         $resolver->setInfo('locale', 'Language of the widget labels (data-cap-lang). Defaults to the request locale.');
         $resolver->setInfo('i18n', 'Widget labels, keyed by the suffix of their data-cap-i18n-* attribute: ["initial-state" => "..."].');
         $resolver->setInfo('csp_nonce', 'Nonce of the <script> tag, and of the <style> the widget injects, for a strict Content-Security-Policy.');
+    }
+
+    /**
+     * The URL of a public file, versioned by the Asset component when it is installed. URLs are left as they are.
+     */
+    private function assetUrl(?string $path): ?string
+    {
+        if (null === $path) {
+            return null;
+        }
+        if ($this->packages instanceof Packages) {
+            return $this->packages->getUrl($path);
+        }
+
+        return str_contains($path, '://') || str_starts_with($path, '/') ? $path : '/' . $path;
     }
 
     #[Override]

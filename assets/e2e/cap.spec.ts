@@ -53,3 +53,24 @@ test('a forged token is rejected by the Cap server', async ({ page }) => {
     await expect(page.locator('#result')).toHaveText('invisible rejected')
     await expect(page.getByText('The human verification failed, please try again.')).toBeVisible()
 })
+
+test('the widget and its solvers come from the application, not from a CDN', async ({ page, baseURL }) => {
+    const origins = new Set<string>()
+    const files: string[] = []
+    page.on('request', (request) => {
+        const url = new URL(request.url())
+        origins.add(url.origin)
+        files.push(url.pathname)
+    })
+
+    await page.goto('/')
+    await page.fill('#checkbox_name', 'Bob')
+    await page.locator('#checkbox_captcha .captcha-trigger').click()
+    await expect(page.locator('#checkbox_captcha input[name="checkbox[captcha]"]')).toHaveValue(/^.+:.+:.+$/)
+
+    expect(files).toContain('/bundles/silarhicap/widget/cap.min.js')
+    expect(files.some((file) => file.startsWith('/bundles/silarhicap/widget/') && file.endsWith('.wasm'))).toBe(true)
+    expect([...origins].sort()).toEqual(
+        [new URL(String(baseURL)).origin, new URL(String(process.env.CAP_ENDPOINT)).origin].sort()
+    )
+})

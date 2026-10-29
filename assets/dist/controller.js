@@ -1,4 +1,4 @@
-import { a as solve, i as reset, n as configure, r as install } from "./core.js";
+import { a as reset, i as loadWidget, n as configure, o as solve, r as install } from "./core.js";
 import { installTurbo } from "./turbo.js";
 import { Controller } from "@hotwired/stimulus";
 // src/adapters/index.ts
@@ -14,15 +14,15 @@ function installAdapters(element) {
 // src/controller.ts
 /**
 * Registered by StimulusBundle as "silarhi--cap-bundle--cap", the controller CapType puts on every challenge: it
-* loads the cap-widget package the first time a protected form shows up, and installs the submit handling and the
-* adapters the `cap.adapters` configuration lists.
+* loads the widget script the first time a protected form shows up, and installs the submit handling and the adapters
+* the `cap.adapters` configuration lists.
 */
 var controller_default = class extends Controller {
 	connect() {
 		configure(this.element);
 		install();
 		installAdapters(this.element);
-		import("cap-widget");
+		loadWidget(this.element);
 	}
 	/** Solves the challenge now, e.g. `data-action="click->silarhi--cap-bundle--cap#solve"`. */
 	solve() {

@@ -107,8 +107,9 @@ final class TestKernel extends Kernel
                 'adapters' => ['turbo'],
                 'render_scripts' => false,
                 'widget' => [
-                    'wasm_url' => '/cap/cap_wasm_bg.wasm',
-                    'hashwx_url' => '/cap/hashwx.wasm',
+                    'script' => 'https://cap.example.com/assets/widget.js',
+                    'wasm_url' => 'cap/cap_wasm_bg.wasm',
+                    'hashwx_url' => null,
                 ],
             ];
         }

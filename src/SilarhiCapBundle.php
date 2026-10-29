@@ -37,9 +37,6 @@ final class SilarhiCapBundle extends AbstractBundle
     /** The configuration key: `cap:` rather than the `silarhi_cap:` derived from the class name. */
     protected string $extensionAlias = 'cap';
 
-    /** The cap-widget release the bundle's script loads by default, from jsDelivr. */
-    public const WIDGET_SCRIPT = 'https://cdn.jsdelivr.net/npm/cap-widget@0.1.58';
-
     #[Override]
     public function configure(DefinitionConfigurator $definition): void
     {
@@ -85,19 +82,20 @@ final class SilarhiCapBundle extends AbstractBundle
                     ->info('Renders the <script> of the bundle with each widget. false when the Stimulus controller or your own install() call loads it.')
                 ->end()
                 ->arrayNode('widget')
+                    ->info('Where the browser loads the Cap widget from: an asset path (the copies the bundle ships, by default) or a URL.')
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->scalarNode('script')
-                            ->defaultValue(self::WIDGET_SCRIPT)
-                            ->info('URL of the cap-widget script the bundle\'s script loads, e.g. https://<your-instance>/assets/widget.js. null when you import cap-widget yourself.')
+                            ->defaultValue(CapType::WIDGET_SCRIPT_PATH)
+                            ->info('The cap-widget script, e.g. https://<your-instance>/assets/widget.js. null when your application imports cap-widget itself.')
                         ->end()
                         ->scalarNode('wasm_url')
-                            ->defaultNull()
-                            ->info('URL of cap_wasm_bg.wasm, to serve the solver from your domain (window.CAP_CUSTOM_WASM_URL).')
+                            ->defaultValue(CapType::WASM_PATH)
+                            ->info('The cap_wasm_bg.wasm solver (window.CAP_CUSTOM_WASM_URL). null for the widget\'s default, jsDelivr.')
                         ->end()
                         ->scalarNode('hashwx_url')
-                            ->defaultNull()
-                            ->info('URL of hashwx.wasm (window.CAP_CUSTOM_HASHWX_URL).')
+                            ->defaultValue(CapType::HASHWX_PATH)
+                            ->info('The hashwx.wasm solver (window.CAP_CUSTOM_HASHWX_URL). null for the widget\'s default, jsDelivr.')
                         ->end()
                     ->end()
                 ->end()
