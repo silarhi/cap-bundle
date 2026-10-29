@@ -60,8 +60,9 @@
         "test:coverage": "vitest run --coverage",
         "test:watch": "vitest",
         "typecheck": "tsc --noEmit",
-        "lint": "biome check src test",
-        "lint:fix": "biome check --write src test"
+        "lint": "biome check src test e2e playwright.config.ts",
+        "lint:fix": "biome check --write src test e2e playwright.config.ts",
+        "e2e": "playwright test"
     },
     "peerDependencies": {
         "@hotwired/stimulus": "^3.0.0",
@@ -75,6 +76,8 @@
     "devDependencies": {
         "@biomejs/biome": "2.6.3",
         "@hotwired/stimulus": "^3.2.2",
+        "@playwright/test": "^1.64.1",
+        "@types/node": "^24.19.2",
         "@vitest/coverage-v8": "^5.0.5",
         "cap-widget": "^0.1.58",
         "jsdom": "^30.0.0",

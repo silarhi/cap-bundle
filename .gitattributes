@@ -19,7 +19,9 @@
 /tests export-ignore
 /assets/.gitignore export-ignore
 /assets/biome.json export-ignore
+/assets/e2e export-ignore
 /assets/pnpm-lock.yaml export-ignore
+/assets/playwright.config.ts export-ignore
 /assets/pnpm-workspace.yaml export-ignore
 /assets/src export-ignore
 /assets/test export-ignore
