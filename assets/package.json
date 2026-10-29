@@ -34,6 +34,10 @@
             "types": "./dist/controller.d.ts",
             "import": "./dist/controller.js"
         },
+        "./live": {
+            "types": "./dist/live.d.ts",
+            "import": "./dist/live.js"
+        },
         "./turbo": {
             "types": "./dist/turbo.d.ts",
             "import": "./dist/turbo.js"

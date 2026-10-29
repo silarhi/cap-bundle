@@ -27,4 +27,8 @@ export declare function solve(target: Element): Promise<boolean>;
  * submitting a form with fetch() yourself and keeping it on the page, as a token is single-use.
  */
 export declare function reset(target: Element | Document): void;
+/**
+ * The token of a challenge, an empty string when it has none: for adapters that send it themselves.
+ */
+export declare function tokenOf(field: Element): string;
 export type { CapWidgetElement };

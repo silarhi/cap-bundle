@@ -140,6 +140,8 @@ import { configure, install, reset, solve } from '@silarhi/cap-bundle'
 | `reset(element)`     | Forgets the tokens of a form, a challenge or the `document`                                        |
 | `configure(element)` | Copies the `data-silarhi-cap-*` settings of a challenge to the globals Cap reads                   |
 | `installTurbo()`     | From `@silarhi/cap-bundle/turbo`: forgets the tokens Turbo submitted or cached                     |
+| `installLive()`      | From `@silarhi/cap-bundle/live`: sends the token of Live Component forms with their action only    |
+| `tokenOf(element)`   | The token of a challenge, `''` when it has none                                                    |
 
 ## Events
 

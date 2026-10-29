@@ -1,5 +1,6 @@
 {%- block silarhi_cap_widget -%}
     {%- if enabled -%}
+        {# data-live-ignore: Live Components re-render the form on each change, keep the widget and its token out of it #}
         {%- set cap_attr = {
             'data-controller': ((attr['data-controller'] ?? '') ~ ' silarhi--cap-bundle--cap')|trim,
             'data-silarhi-cap': mode,
@@ -7,7 +8,8 @@
             'data-silarhi-cap-wasm-url': wasm_url,
             'data-silarhi-cap-hashwx-url': hashwx_url,
             'data-silarhi-cap-nonce': csp_nonce,
-            'data-silarhi-cap-adapters': adapters,
+            'data-silarhi-cap-adapters': adapters ? adapters|join(' ') : null,
+            'data-live-ignore': 'live' in adapters ? true : null,
             'data-cap-api-endpoint': endpoint,
             'data-cap-lang': locale,
             'data-cap-worker-count': worker_count,

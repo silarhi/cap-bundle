@@ -36,8 +36,8 @@ assets/
 │                            #   no framework: anything Turbo-specific (or htmx...) goes in an adapter
 ├── src/controller.ts        # Stimulus controller (silarhi--cap-bundle--cap): configure + install + adapters +
 │                            #   import('cap-widget')
-├── src/adapters/            # Opt-in framework adapters: turbo.ts (installTurbo), index.ts (installAdapters reads
-│                            #   data-silarhi-cap-adapters, from the cap.adapters configuration)
+├── src/adapters/            # Opt-in framework adapters: turbo.ts (installTurbo), live.ts (installLive),
+│                            #   index.ts (installAdapters: data-silarhi-cap-adapters, from cap.adapters)
 ├── src/auto.ts              # Built to public/cap.js: install + loads widget.script after configure()
 ├── src/index.ts             # npm entry (@silarhi/cap-bundle)
 ├── dist/                    # Built, committed: StimulusBundle, AssetMapper and bundlers read it
@@ -92,6 +92,10 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   module (public/cap.js and an application bundle).
 - **`solve()` returns at once while a solve is running** (the visitor clicked): `solveWidget()` waits for the widget's
   `solve` / `error` events instead of the promise.
+- **Live Components validate on every re-render** (`ComponentWithFormTrait::submitFormOnRender()` submits the whole
+  form): a token in the component's data is redeemed by the next re-render. The live adapter keeps it out (CapType
+  adds `data-live-ignore`, no `change` event is ever dispatched), `set(model, token, false)` it on submit so that it
+  rides with the action request only, and resets it, in the DOM and the data, when `set()`'s promise resolves.
 - **Tokens are single-use**: the core clears them on a bfcache `pageshow`; the Turbo adapter on `turbo:submit-end`
   and `turbo:before-cache`.
 - **Script loading**: the form renders `<script type="module" src="/bundles/silarhicap/cap.js">`. Modules run once per

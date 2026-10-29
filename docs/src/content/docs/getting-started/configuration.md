@@ -21,7 +21,8 @@ cap:
     # PSR-17 request and stream factory service IDs. null: the HTTP client (psr18.http_client is both)
     request_factory: null
     stream_factory: null
-    # Framework adapters of the JavaScript, opt-in: [turbo] forgets the tokens Turbo Drive submitted or cached
+    # Framework adapters of the JavaScript, opt-in: turbo forgets the tokens Turbo Drive submitted or cached,
+    # live sends the token of Live Component forms with their action only
     adapters: []
     # Renders the <script> of the bundle with each widget. false with the Stimulus controller or your own install()
     render_scripts: true

@@ -56,6 +56,13 @@ function reset(target) {
 		invisibleCaps.get(field)?.reset();
 	} else if (hasToken(field)) field.reset();
 }
+/**
+* The token of a challenge, an empty string when it has none: for adapters that send it themselves.
+*/
+function tokenOf(field) {
+	if (field instanceof HTMLInputElement) return field.value;
+	return field.token ?? "";
+}
 function fieldsOf(target) {
 	if (target instanceof Element && target.matches("[data-silarhi-cap]")) return [target];
 	return Array.from(target.querySelectorAll(SELECTOR));
@@ -160,4 +167,4 @@ function onFocusIn(event) {
 	if (!form) return;
 	for (const field of fieldsOf(form)) if (isInvisible(field) && !hasToken(field)) solveField(field);
 }
-export { solve as a, reset as i, configure as n, install as r, SELECTOR as t };
+export { solve as a, reset as i, configure as n, tokenOf as o, install as r, SELECTOR as t };

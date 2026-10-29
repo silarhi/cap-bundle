@@ -20,7 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   invisible one as soon as the visitor focuses the form. Tokens are forgotten when the back-forward cache restores a
   page.
 - Opt-in JavaScript adapters (`adapters: [turbo]`, or `installTurbo()` from `@silarhi/cap-bundle/turbo`): the Turbo
-  one forgets the tokens of a Turbo submission and before Turbo caches the page.
+  one forgets the tokens of a Turbo submission and before Turbo caches the page. The Live one (`adapters: [live]`,
+  `installLive()`) keeps the challenge out of Live Component re-renders and sends its token with the action only:
+  `ComponentWithFormTrait` validates the form on every re-render, which would redeem the token.
+- `CapValidator` is reset between the requests of long-running workers (FrankenPHP, RoadRunner).
 - Two ways to load it: a script the form renders (`/bundles/silarhicap/cap.js`, no build step), or the
   `silarhi--cap-bundle--cap` Stimulus controller StimulusBundle registers, which lazy-loads `cap-widget`.
 - The `CAP_ENDPOINT` and `CAP_SECRET_KEY` env vars as the default `endpoint` and `secret_key`: installing the bundle

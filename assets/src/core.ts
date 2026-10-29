@@ -81,6 +81,17 @@ export function reset(target: Element | Document): void {
     }
 }
 
+/**
+ * The token of a challenge, an empty string when it has none: for adapters that send it themselves.
+ */
+export function tokenOf(field: Element): string {
+    if (field instanceof HTMLInputElement) {
+        return field.value
+    }
+
+    return (field as Partial<CapWidgetElement>).token ?? ''
+}
+
 function fieldsOf(target: Element | Document): Array<CapWidgetElement | HTMLInputElement> {
     if (target instanceof Element && target.matches(SELECTOR)) {
         return [target as CapWidgetElement | HTMLInputElement]
