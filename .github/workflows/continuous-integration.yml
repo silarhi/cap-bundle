@@ -152,7 +152,7 @@ jobs:
             actions: read
             contents: write
             pull-requests: write
-        uses: silarhi/.github/.github/workflows/coverage-report.yml@feat/js-coverage
+        uses: silarhi/.github/.github/workflows/coverage-report.yml@main
 
     ci-passed:
         name: CI passed
