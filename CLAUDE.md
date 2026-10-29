@@ -15,7 +15,8 @@ Stimulus or no build step at all.
 - **Framework**: Symfony 6.4 / 7.x / 8.x (`symfony/form`, `symfony/validator`), PSR-18 / PSR-17 for `/siteverify`
   (Symfony's `psr18.http_client` by default, which needs `symfony/http-client` and a PSR-17 implementation)
 - **Optional**: `symfony/twig-bundle` (form theme), `symfony/asset` (versioned script URL), StimulusBundle
-- **JavaScript**: `cap-widget` (peer), `@hotwired/stimulus` (optional peer); built with tsdown, tested with Vitest
+- **JavaScript**: `@hotwired/stimulus` (optional peer); `cap-widget` and `@cap.js/wasm` are dev dependencies the build
+  copies to `public/widget/`; built with tsdown, tested with Vitest and Playwright
 
 ## Repository Structure
 
@@ -32,17 +33,20 @@ templates/form/cap_widget.html.twig  # silarhi_cap_widget block: <cap-widget> or
 translations/                # validators.<locale>.xlf: cap.validation.missing / cap.validation.invalid (keys, not
                              #   English sentences: the translator is needed)
 assets/
-├── src/core.ts              # install(), configure(), solve(), reset(): listeners delegated to the document. Knows
-│                            #   no framework: anything Turbo-specific (or htmx...) goes in an adapter
+├── src/core.ts              # install(), configure(), loadWidget(), solve(), reset(): listeners delegated to the
+│                            #   document. Knows no framework: anything Turbo-specific (or htmx...) goes in an adapter
 ├── src/controller.ts        # Stimulus controller (silarhi--cap-bundle--cap): configure + install + adapters +
-│                            #   import('cap-widget')
+│                            #   loadWidget (imports the URL of data-silarhi-cap-script, not the npm package)
 ├── src/adapters/            # Opt-in framework adapters: turbo.ts (installTurbo), index.ts (installAdapters reads
 │                            #   data-silarhi-cap-adapters, from the cap.adapters configuration)
-├── src/auto.ts              # Built to public/cap.js: install + loads widget.script after configure()
+├── src/auto.ts              # Built to public/cap.js: install + adapters + configure + loadWidget
+├── scripts/copy-widget.mjs  # Run by `pnpm build`: copies cap-widget and @cap.js/wasm to public/widget/, fails when
+│                            #   the WASM version cap-widget expects is not the one installed
 ├── src/index.ts             # npm entry (@silarhi/cap-bundle)
 ├── dist/                    # Built, committed: StimulusBundle, AssetMapper and bundlers read it
 └── test/                    # Vitest (jsdom) with fake <cap-widget> and Cap
-public/cap.js                # Built, committed: assets:install copies it to public/bundles/silarhicap/
+public/cap.js                # Built, committed: assets:install copies public/ to public/bundles/silarhicap/
+public/widget/               # Built, committed: cap.min.js, cap_wasm_bg.wasm, hashwx.wasm, their LICENSE
 tests/                       # PHPUnit: Verifier/, Validator/ unit tests, Functional/ (TestKernel per environment:
                              #   test, disabled, custom)
 ```
@@ -125,8 +129,10 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
 - **Integration libraries** (`symfony/*`, `twig/twig`) keep **wide version ranges** (`^6.4 || ^7.0 || ^8.0`) so the CI
   matrix tests from the lowest to the latest supported versions. Never bump their floors to the installed version.
 - **QA tools** are bumped via `composer bump:tools`. Do not add `config.bump-after-update`.
-- The default `widget.script` pins a `cap-widget` release (`SilarhiCapBundle::WIDGET_SCRIPT`): bump it with the
-  `cap-widget` dev dependency of `assets/package.json`, and test the widget in a browser.
+- The bundle ships the widget: `cap-widget` and `@cap.js/wasm` (one Renovate group) are copied to `public/widget/`
+  by `pnpm build`. On Renovate's branches, `.github/workflows/widget.yml` commits the rebuilt files with
+  `GITHUB_TOKEN`, then dispatches the CI (a `GITHUB_TOKEN` push triggers no workflow), whose E2E job tests the new
+  widget. By hand: bump both, `pnpm build`, commit the result.
 
 ## API Documentation
 

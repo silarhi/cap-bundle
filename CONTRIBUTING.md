@@ -37,7 +37,11 @@ composer normalize --dry-run
 
 The submit handling and the Stimulus controller live in [`assets/`](assets), in TypeScript. Their built files are
 committed: Composer installs them, StimulusBundle and AssetMapper read `assets/dist/`, and `assets:install` copies
-`public/cap.js`. Rebuild them in the same commit as the source, the CI checks they match.
+`public/`. Rebuild them in the same commit as the source, the CI checks they match.
+
+`public/widget/` holds the Cap widget the bundle ships, copied from the `cap-widget` and `@cap.js/wasm` dev
+dependencies by `pnpm build`. To update it, bump both packages (the build fails when they do not match), rebuild and
+commit; Renovate's pull requests are rebuilt by a workflow.
 
 ```bash
 cd assets
@@ -45,7 +49,7 @@ pnpm install
 pnpm test       # Vitest (pnpm test:coverage writes coverage/)
 pnpm lint       # Biome
 pnpm typecheck
-pnpm build      # assets/dist and public/cap.js
+pnpm build      # assets/dist, public/cap.js and public/widget/
 ```
 
 ## End-to-end tests

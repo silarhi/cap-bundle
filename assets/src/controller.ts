@@ -1,11 +1,11 @@
 import { Controller } from '@hotwired/stimulus'
 import { installAdapters } from './adapters'
-import { configure, install, reset, solve } from './core'
+import { configure, install, loadWidget, reset, solve } from './core'
 
 /**
  * Registered by StimulusBundle as "silarhi--cap-bundle--cap", the controller CapType puts on every challenge: it
- * loads the cap-widget package the first time a protected form shows up, and installs the submit handling and the
- * adapters the `cap.adapters` configuration lists.
+ * loads the widget script the first time a protected form shows up, and installs the submit handling and the adapters
+ * the `cap.adapters` configuration lists.
  */
 export default class extends Controller<HTMLElement> {
     connect(): void {
@@ -13,7 +13,7 @@ export default class extends Controller<HTMLElement> {
         configure(this.element)
         install()
         installAdapters(this.element)
-        void import('cap-widget')
+        loadWidget(this.element)
     }
 
     /** Solves the challenge now, e.g. `data-action="click->silarhi--cap-bundle--cap#solve"`. */

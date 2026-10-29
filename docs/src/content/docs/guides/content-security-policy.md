@@ -7,12 +7,16 @@ sidebar:
 
 The widget needs:
 
-| Directive     | Sources                                                                                                               |
-| ------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `script-src`  | the script of the bundle, the origin of `widget.script` (`https://cdn.jsdelivr.net` by default), `'wasm-unsafe-eval'` |
-| `worker-src`  | `blob:`: the solver runs in web workers                                                                               |
-| `connect-src` | your Cap server (challenges), and the origin of the WebAssembly files (`https://cdn.jsdelivr.net` by default)         |
-| `style-src`   | a nonce, or `'unsafe-inline'`: the widget injects a `<style>` in its shadow root                                      |
+| Directive     | Sources                                                                                       |
+| ------------- | --------------------------------------------------------------------------------------------- |
+| `script-src`  | `'self'` (the script of the bundle and the widget, by default), a nonce, `'wasm-unsafe-eval'` |
+| `worker-src`  | `blob:`: the solver runs in web workers                                                       |
+| `connect-src` | `'self'` (the WebAssembly solvers, by default), and your Cap server (challenges)              |
+| `style-src`   | a nonce, or `'unsafe-inline'`: the widget injects a `<style>` in its shadow root              |
+
+Add the origin of `widget.script`, `widget.wasm_url` and `widget.hashwx_url` when they point to a CDN or to your Cap
+server (see [self-hosting the widget](/guides/self-hosting/)). Browsers without `DecompressionStream` load a
+decompression fallback from `https://cdn.jsdelivr.net` (`window.CAP_PAKO_URL`).
 
 ## Nonces
 
