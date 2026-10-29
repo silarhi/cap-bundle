@@ -1,10 +1,12 @@
+type SolveResult = { success: boolean; token: string } | undefined
+
 /** Stands in for Cap's <cap-widget>: solve() succeeds with "token-<n>" unless `fail` is set. */
 export class FakeWidget extends HTMLElement {
     static fail = false
     static solves = 0
     token: string | null = null
 
-    async solve() {
+    async solve(): Promise<SolveResult> {
         const solve = ++FakeWidget.solves
         await Promise.resolve()
         if (FakeWidget.fail) {
@@ -16,7 +18,7 @@ export class FakeWidget extends HTMLElement {
         return { success: true, token: this.token }
     }
 
-    reset() {
+    reset(): void {
         this.token = null
         this.dispatchEvent(new CustomEvent('reset'))
     }
@@ -33,19 +35,19 @@ export class FakeCap {
         document.documentElement.appendChild(this.widget)
     }
 
-    get token() {
+    get token(): string | null {
         return this.widget.token
     }
 
-    solve() {
+    solve(): Promise<SolveResult> {
         return this.widget.solve()
     }
 
-    reset() {
+    reset(): void {
         this.widget.reset()
     }
 
-    addEventListener(type: string, listener: EventListener) {
+    addEventListener(type: string, listener: EventListener): void {
         this.widget.addEventListener(type, listener)
     }
 }

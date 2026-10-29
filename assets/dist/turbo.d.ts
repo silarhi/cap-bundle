@@ -1,7 +1,7 @@
 declare global {
   interface DocumentEventMap {
-    'turbo:submit-end': CustomEvent;
-    'turbo:before-cache': CustomEvent;
+    "turbo:submit-end": CustomEvent;
+    "turbo:before-cache": CustomEvent;
   }
 }
 /**

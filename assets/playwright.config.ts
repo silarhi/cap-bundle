@@ -1,8 +1,8 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test'
 
 const port = Number(process.env.E2E_PORT ?? 8099)
 
-export default defineConfig({
+const config: PlaywrightTestConfig = defineConfig({
     testDir: 'e2e',
     timeout: 60_000,
     retries: process.env.CI ? 1 : 0,
@@ -21,3 +21,5 @@ export default defineConfig({
         stderr: 'ignore',
     },
 })
+
+export default config
