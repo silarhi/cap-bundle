@@ -26,6 +26,7 @@ src/
 ├── Form/CapType.php         # The field: view vars, options (mode, locale, worker_count, troubleshooting_url, i18n, csp_nonce)
 ├── Form/CapMode.php         # Enum of the mode option (Checkbox, Invisible); CapType's normalizer also takes its values
 ├── Validator/               # Cap constraint (#[Cap]) and CapValidator (enabled: false accepts everything)
+├── DependencyInjection/     # Psr17FactoryPass (@internal): psr18.http_client needs PSR-17 factories
 ├── Verifier/                # CapVerifierInterface, CapVerifier (PSR-18 client + PSR-17 factories, never throws),
 │                            #   VerificationResult
 └── SilarhiCapBundle.php     # `cap:` configuration tree (extensionAlias), `cap.*` services, prepends the form theme
@@ -49,7 +50,7 @@ assets/
 └── test/                    # Vitest (jsdom) with fake <cap-widget> and Cap
 public/cap.js                # Built, committed: assets:install copies public/ to public/bundles/silarhicap/
 public/widget/               # Built, committed: cap.min.js, cap_wasm_bg.wasm, hashwx.wasm, their LICENSE
-tests/                       # PHPUnit: Verifier/, Validator/ unit tests, Functional/ (TestKernel per environment:
+tests/                       # PHPUnit: Verifier/, Validator/, DependencyInjection/ unit tests, Functional/ (TestKernel per environment:
                              #   test, disabled, custom)
 ```
 
@@ -120,7 +121,11 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
 - **PSR-18 like picasso-bundle**: `http_client` (default `psr18.http_client`), `request_factory` and `stream_factory`
   (default: the client, which `Psr18Client` also is). The `require` stays minimal: `symfony/http-client` and its
   PSR-17 implementation (`nyholm/psr7`) are only suggested, as in picasso-bundle, and `loadExtension()` throws a
-  `LogicException` naming them when `http_client` is null and `Psr18Client` does not exist. Tests go through the real chain: `framework.http_client.mock_response_factory`
+  `LogicException` naming them when `http_client` is null and `Psr18Client` does not exist. `Psr18Client` also throws
+  when it has no PSR-17 factories, which would only show on the first submitted form: `loadExtension()` sets the
+  build-only `.cap.default_http_client` parameter, and `Psr17FactoryPass` (a pass: the extension cannot see other
+  services) fails the build when the container has no `ResponseFactoryInterface` + `StreamFactoryInterface` services
+  and neither `Http\Discovery\Psr17Factory` nor Nyholm's factory exists, the fallbacks of `Psr18Client`. Tests go through the real chain: `framework.http_client.mock_response_factory`
   (`tests/Fixtures/CapServerMock.php`).
 - Optional services (`assets.packages`, `request_stack`, `logger`) are injected with `ignoreOnInvalid()`.
 

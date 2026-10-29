@@ -21,6 +21,7 @@ use function is_string;
 
 use LogicException;
 use Override;
+use Silarhi\CapBundle\DependencyInjection\Psr17FactoryPass;
 use Silarhi\CapBundle\Form\CapType;
 use Silarhi\CapBundle\Validator\CapValidator;
 use Silarhi\CapBundle\Verifier\CapVerifier;
@@ -106,6 +107,14 @@ final class SilarhiCapBundle extends AbstractBundle
     }
 
     #[Override]
+    public function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+
+        $container->addCompilerPass(new Psr17FactoryPass());
+    }
+
+    #[Override]
     public function prependExtension(ContainerConfigurator $container, ContainerBuilder $builder): void
     {
         if ($builder->hasExtension('twig')) {
@@ -147,6 +156,9 @@ final class SilarhiCapBundle extends AbstractBundle
         // FrameworkBundle registers psr18.http_client when symfony/http-client and psr/http-client are installed
         if (null === $config['http_client'] && !class_exists(Psr18Client::class)) {
             throw new LogicException('The Cap bundle redeems tokens with Symfony\'s "psr18.http_client" service by default, which needs symfony/http-client: run "composer require symfony/http-client nyholm/psr7", or set "cap.http_client" to your own PSR-18 client service.');
+        }
+        if (null === $config['http_client']) {
+            $builder->setParameter(Psr17FactoryPass::DEFAULT_CLIENT_PARAMETER, true);
         }
         $httpClient = $config['http_client'] ?? 'psr18.http_client';
 
