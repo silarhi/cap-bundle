@@ -1,17 +1,20 @@
 {
     "name": "silarhi/cap-bundle",
-    "description": "Cap, the self-hosted proof-of-work CAPTCHA, for Symfony forms: a form type, a validator constraint and a Turbo-ready widget",
+    "description": "Cap CAPTCHA (trycap.dev) for Symfony forms: a self-hosted, proof-of-work reCAPTCHA alternative with a form type, a validator constraint and a Turbo-ready widget",
     "license": "MIT",
     "type": "symfony-bundle",
     "keywords": [
         "cap",
+        "cap-captcha",
         "captcha",
+        "captcha-alternative",
         "proof-of-work",
         "recaptcha",
         "symfony",
         "symfony-bundle",
         "symfony-form",
         "symfony-ux",
+        "trycap",
         "turbo",
         "stimulus"
     ],

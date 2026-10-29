@@ -21,7 +21,7 @@
 <h1 align="center">Cap Bundle</h1>
 
 <p align="center">
-    <strong><a href="https://trycap.dev">Cap</a>, the self-hosted proof-of-work CAPTCHA, in your Symfony forms.</strong><br>
+    <strong><a href="https://trycap.dev">Cap CAPTCHA</a> (trycap.dev), the self-hosted proof-of-work CAPTCHA, in your Symfony forms.</strong><br>
     A form type, a validator constraint and a widget that keeps working across Turbo visits — the
     <a href="https://github.com/karser/KarserRecaptcha3Bundle">KarserRecaptcha3Bundle</a> way, without Google.
 </p>
@@ -61,9 +61,9 @@ CAP_SECRET_KEY=<the secret key of the site key>
 ```
 
 ```yaml
-# config/packages/silarhi_cap.yaml
+# config/packages/cap.yaml
 when@test:
-    silarhi_cap:
+    cap:
         enabled: false
 ```
 
@@ -88,6 +88,7 @@ Everything else is on **[cap-bundle.silarhi.dev](https://cap-bundle.silarhi.dev)
 - The form type: [checkbox and invisible modes](https://cap-bundle.silarhi.dev/guides/form-type/), [labels and languages](https://cap-bundle.silarhi.dev/guides/translations/)
 - JavaScript: [without a build step, with Stimulus or your bundler](https://cap-bundle.silarhi.dev/guides/javascript/), [Turbo and SPAs](https://cap-bundle.silarhi.dev/guides/turbo/)
 - [Self-hosting the widget](https://cap-bundle.silarhi.dev/guides/self-hosting/), [Content Security Policy](https://cap-bundle.silarhi.dev/guides/content-security-policy/)
+- [Migrating from reCAPTCHA](https://cap-bundle.silarhi.dev/guides/migrating-from-recaptcha/) (KarserRecaptcha3Bundle)
 - [JSON endpoints and DTOs](https://cap-bundle.silarhi.dev/guides/api/), [testing](https://cap-bundle.silarhi.dev/guides/testing/)
 
 ## Contributing
