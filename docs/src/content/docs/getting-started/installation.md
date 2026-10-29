@@ -51,9 +51,9 @@ CAP_SECRET_KEY=<the secret key of the site key>
 Disable the bundle in the test environment:
 
 ```yaml
-# config/packages/silarhi_cap.yaml
+# config/packages/cap.yaml
 when@test:
-    silarhi_cap:
+    cap:
         # No widget, every submission accepted: see the testing guide
         enabled: false
 ```

@@ -31,8 +31,8 @@ protected form.
 Turn off the script of the bundle:
 
 ```yaml
-# config/packages/silarhi_cap.yaml
-silarhi_cap:
+# config/packages/cap.yaml
+cap:
     render_scripts: false
 ```
 

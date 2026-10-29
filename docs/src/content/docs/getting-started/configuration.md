@@ -1,13 +1,13 @@
 ---
 title: Configuration
-description: Every option of the silarhi_cap configuration, with its default value.
+description: Every option of the cap configuration, with its default value.
 sidebar:
     order: 2
 ---
 
 ```yaml
-# config/packages/silarhi_cap.yaml
-silarhi_cap:
+# config/packages/cap.yaml
+cap:
     # The API endpoint of the site key, as the browser reaches it: https://<your-instance>/<site-key>/
     endpoint: '%env(CAP_ENDPOINT)%'
     # The secret key of the site key (not the ADMIN_KEY of the dashboard)
@@ -36,7 +36,7 @@ The server redeems tokens at `verify_url`, `<endpoint>siteverify` by default. Se
 Cap through another address than the browser, a Docker network for instance:
 
 ```yaml
-silarhi_cap:
+cap:
     endpoint: 'https://cap.example.com/%env(CAP_SITE_KEY)%/'
     verify_url: 'http://cap:3000/%env(CAP_SITE_KEY)%/siteverify'
 ```
@@ -54,7 +54,7 @@ framework:
                 base_uri: 'https://cap.example.com'
                 timeout: 3
 
-silarhi_cap:
+cap:
     http_client: 'cap.client'
 ```
 

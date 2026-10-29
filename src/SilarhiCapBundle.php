@@ -34,6 +34,9 @@ use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 final class SilarhiCapBundle extends AbstractBundle
 {
+    /** The configuration key: `cap:` rather than the `silarhi_cap:` derived from the class name. */
+    protected string $extensionAlias = 'cap';
+
     /** The cap-widget release the bundle's script loads by default, from jsDelivr. */
     public const WIDGET_SCRIPT = 'https://cdn.jsdelivr.net/npm/cap-widget@0.1.58';
 
@@ -127,7 +130,7 @@ final class SilarhiCapBundle extends AbstractBundle
         $services = $container->services();
 
         // The endpoint is often an env var: its trailing slash can only be normalized at runtime
-        $services->set('silarhi_cap.verifier', CapVerifier::class)
+        $services->set('cap.verifier', CapVerifier::class)
             ->factory([CapVerifier::class, 'fromEndpoint'])
             ->args([
                 $config['endpoint'],
@@ -137,13 +140,13 @@ final class SilarhiCapBundle extends AbstractBundle
                 service('logger')->ignoreOnInvalid(),
             ])
             ->tag('monolog.logger', ['channel' => 'cap']);
-        $services->alias(CapVerifierInterface::class, 'silarhi_cap.verifier');
+        $services->alias(CapVerifierInterface::class, 'cap.verifier');
 
-        $services->set('silarhi_cap.validator', CapValidator::class)
-            ->args([service('silarhi_cap.verifier'), $config['enabled']])
+        $services->set('cap.validator', CapValidator::class)
+            ->args([service('cap.verifier'), $config['enabled']])
             ->tag('validator.constraint_validator');
 
-        $services->set('silarhi_cap.form_type', CapType::class)
+        $services->set('cap.form_type', CapType::class)
             ->args([
                 $config['endpoint'],
                 $config['enabled'],

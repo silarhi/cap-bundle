@@ -23,7 +23,8 @@ src/
 ├── Form/CapType.php         # The field: view vars, options (mode, locale, worker_count, troubleshooting_url, i18n, csp_nonce)
 ├── Validator/               # Cap constraint (#[Cap]) and CapValidator (enabled: false accepts everything)
 ├── Verifier/                # CapVerifierInterface, CapVerifier (HTTP client, never throws), VerificationResult
-└── SilarhiCapBundle.php     # Configuration tree, services, prepends the form theme and the AssetMapper path
+└── SilarhiCapBundle.php     # `cap:` configuration tree (extensionAlias), `cap.*` services, prepends the form theme
+                             #   and the AssetMapper path
 templates/form/cap_widget.html.twig  # silarhi_cap_widget block: <cap-widget> or <input type="hidden"> + <script type="module">
 translations/                # validators.<locale>.xlf: the two constraint messages
 assets/

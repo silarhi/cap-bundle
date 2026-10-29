@@ -10,9 +10,9 @@ sidebar:
 Disable the bundle in the test environment:
 
 ```yaml
-# config/packages/silarhi_cap.yaml
+# config/packages/cap.yaml
 when@test:
-    silarhi_cap:
+    cap:
         enabled: false
 ```
 
@@ -24,9 +24,9 @@ token, and no request reaches a Cap server.
 Keep the bundle enabled in a dedicated environment and replace its HTTP client with a `MockHttpClient`:
 
 ```yaml
-# config/packages/silarhi_cap.yaml
+# config/packages/cap.yaml
 when@test_cap:
-    silarhi_cap:
+    cap:
         http_client: 'test.cap_client'
     services:
         test.cap_client:

@@ -107,7 +107,7 @@ final class TestKernel extends Kernel
             ];
         }
 
-        $container->extension('silarhi_cap', $config);
+        $container->extension('cap', $config);
 
         $services = $container->services();
         $services->set('test.cap_http_client', MockHttpClient::class)->public();
