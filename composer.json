@@ -48,7 +48,7 @@
         "friendsofphp/php-cs-fixer": "^3.95.27",
         "nyholm/psr7": "^1.8.2",
         "phpstan/extension-installer": "^1.4.3",
-        "phpstan/phpstan": "^2.3.2",
+        "phpstan/phpstan": "^2.3.3",
         "phpstan/phpstan-strict-rules": "^2.1.0",
         "phpstan/phpstan-symfony": "^2.1.1",
         "phpunit/phpunit": "^11.5.57 || ^12.5.38 || ^13.4.1",
