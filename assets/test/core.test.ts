@@ -85,6 +85,24 @@ describe('invisible challenge', () => {
         expect(new FormData(form).get('contact[cap]')).toBe('')
     })
 
+    it('does not solve again a challenge that has its token', async () => {
+        const form = render(html)
+        expect(await solve(form)).toBe(true)
+
+        expect(await solve(form)).toBe(true)
+        expect(FakeWidget.solves).toBe(1)
+        expect(new FormData(form).get('contact[cap]')).toBe('token-1')
+    })
+
+    it('does not solve a challenge outside a form on focus', () => {
+        render(`<input type="hidden" data-silarhi-cap="invisible" data-cap-api-endpoint="https://cap.test/key/">
+            <button type="button">Not in a form</button>`)
+        document.querySelector('button')?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+
+        expect(FakeCap.configs).toEqual([])
+        expect(FakeWidget.solves).toBe(0)
+    })
+
     it('removes the hidden widget of a form that left the page', async () => {
         await solve(render(html))
         await solve(render(html))
@@ -141,6 +159,19 @@ describe('checkbox challenge', () => {
 
         finish()
         await vi.waitFor(() => expect(listener).toHaveBeenCalledOnce())
+    })
+
+    it('does not solve a widget the visitor solved while its script was loading', async () => {
+        const form = render(html)
+        const widget = form.querySelector('cap-widget') as FakeWidget
+        widget.solve = vi.fn(() => Promise.resolve(undefined))
+
+        const solved = solve(form)
+        // Before customElements.whenDefined() settles
+        widget.token = 'visitor-token'
+
+        expect(await solved).toBe(true)
+        expect(widget.solve).not.toHaveBeenCalled()
     })
 
     it('submits all the same when the challenge fails', async () => {
@@ -254,6 +285,19 @@ describe('page lifecycle', () => {
 })
 
 describe('forms without Cap', () => {
+    it('ignores a submit event that does not come from a form', () => {
+        render('<div data-silarhi-cap="invisible"></div>')
+        const element = document.querySelector('div') as HTMLDivElement
+        const listener = vi.fn()
+        element.addEventListener('submit', listener)
+        const event = new Event('submit', { bubbles: true, cancelable: true })
+
+        element.dispatchEvent(event)
+        expect(listener).toHaveBeenCalledOnce()
+        expect(event.defaultPrevented).toBe(false)
+        expect(FakeCap.configs).toEqual([])
+    })
+
     it('are left alone', () => {
         const form = render('<form><button type="submit">Send</button></form>')
         const listener = vi.fn((event: Event) => event.preventDefault())

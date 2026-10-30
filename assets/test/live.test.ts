@@ -1,7 +1,8 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { installAdapters } from '../src/adapters'
+import { installLive } from '../src/adapters/live'
 import { install } from '../src/core'
-import { defineFakes, type FakeWidget, render, resetFakes, submitted } from './fakes'
+import { defineFakes, FakeWidget, render, resetFakes, submitted } from './fakes'
 
 /** A Live Component root whose set() resolves when the test says the request is over. */
 function liveComponent(form: HTMLFormElement) {
@@ -88,6 +89,68 @@ describe('Live Components adapter', () => {
 
         await done
         expect(live.calls).toEqual([['contact[captcha]', 'token-1', false]])
+    })
+
+    it('sends the token of an invisible challenge under the name of its input', async () => {
+        const form = render(`<div data-controller="live">
+            <form>
+                <input type="hidden" name="contact[captcha]" data-silarhi-cap="invisible" data-cap-api-endpoint="https://cap.test/key/" data-live-ignore>
+            </form>
+        </div>`)
+        const live = liveComponent(form)
+        const done = submitted(form)
+
+        form.requestSubmit()
+        await done
+        expect(live.calls).toEqual([['contact[captcha]', 'token-1', false]])
+    })
+
+    it('sends no empty token when a failed challenge is submitted all the same', async () => {
+        FakeWidget.fail = true
+        const form = render(html)
+        const live = liveComponent(form)
+        const done = submitted(form)
+
+        form.requestSubmit()
+        await done
+        expect(live.calls).toEqual([])
+    })
+
+    it('skips a challenge without a model to set, and sends the others', async () => {
+        const form = render(`<div data-controller="live">
+            <form novalidate>
+                <cap-widget data-silarhi-cap="checkbox"></cap-widget>
+                <cap-widget data-silarhi-cap="checkbox" data-cap-hidden-field-name="contact[captcha]"></cap-widget>
+            </form>
+        </div>`)
+        for (const widget of form.querySelectorAll<FakeWidget>('cap-widget')) {
+            await widget.solve()
+        }
+        const live = liveComponent(form)
+        form.addEventListener('submit', (event) => event.preventDefault())
+
+        form.requestSubmit()
+        expect(live.calls).toEqual([['contact[captcha]', 'token-2', false]])
+    })
+
+    it('sets the token once however many times it is installed', async () => {
+        installLive()
+        installLive()
+        const form = render(html)
+        await (form.querySelector('cap-widget') as FakeWidget).solve()
+        const live = liveComponent(form)
+        form.addEventListener('submit', (event) => event.preventDefault())
+
+        form.requestSubmit()
+        expect(live.calls).toEqual([['contact[captcha]', 'token-1', false]])
+    })
+
+    it('ignores a submit event that does not come from a form', () => {
+        const root = render(html).closest('[data-controller~="live"]') as HTMLElement
+        const live = liveComponent(root.querySelector('form') as HTMLFormElement)
+
+        root.dispatchEvent(new Event('submit', { bubbles: true }))
+        expect(live.component.set).not.toHaveBeenCalled()
     })
 
     it('leaves the forms outside a Live Component alone', async () => {
