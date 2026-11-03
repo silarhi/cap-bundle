@@ -9,7 +9,7 @@
     },
     "dependencies": {
         "@astrojs/starlight": "^0.42.5",
-        "@silarhi/docs-kit": "^0.9.0",
+        "@silarhi/docs-kit": "^0.10.0",
         "astro": "^7.3.8"
     },
     "packageManager": "pnpm@12.16.1"
