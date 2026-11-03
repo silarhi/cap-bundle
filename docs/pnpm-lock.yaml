@@ -168,10 +168,10 @@ importers:
     dependencies:
       '@astrojs/starlight':
         specifier: ^0.42.5
-        version: 0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
+        version: 0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
       '@silarhi/docs-kit':
         specifier: ^0.9.0
-        version: 0.9.1(@astrojs/markdown-satteri@0.4.5)(@astrojs/starlight@0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)))(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
+        version: 0.9.1(@astrojs/markdown-satteri@0.4.5)(@astrojs/starlight@0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)))(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
       astro:
         specifier: ^7.3.8
         version: 7.4.2(@types/node@24.19.2)(yaml@2.9.1)
@@ -273,8 +273,8 @@ packages:
   '@astrojs/sitemap@3.7.4':
     resolution: {integrity: sha512-LbKNC24bdUWcQf/pThB6qLlSqHojxGjZDURIzFocY8rlWnAn2t74nnhnK6S5x0NHriHoAduLEpVjRykmeGiVvA==}
 
-  '@astrojs/starlight@0.42.7':
-    resolution: {integrity: sha512-mlbit5iRjLx5eIcLf84Q2CwkrrsEgZrQwKKBK+vRf+ZGiSrwy1UGdT1hUfAIaHrMfcvkDpL+gw3aua7HobiKFg==}
+  '@astrojs/starlight@0.42.8':
+    resolution: {integrity: sha512-BGP8bmTbdky4OFCV9BNWZedLuzONyUtz754q+hie+li/2TQ5XJ6nvfO8fhRhIMcCpUEsA5Ynf4qTTFf/ft/3Pg==}
     peerDependencies:
       '@astrojs/markdown-remark': ^7.3.0
       astro: ^7.2.10
@@ -2043,7 +2043,7 @@ snapshots:
       sitemap: 9.0.1
       zod: 4.6.7
 
-  '@astrojs/starlight@0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))':
+  '@astrojs/starlight@0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))':
     dependencies:
       '@astrojs/markdown-satteri': 0.4.5
       '@astrojs/mdx': 8.1.1(@astrojs/markdown-satteri@0.4.5)(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
@@ -2443,14 +2443,14 @@ snapshots:
 
   '@shikijs/vscode-textmate@10.1.0': {}
 
-  '@silarhi/docs-kit@0.9.1(@astrojs/markdown-satteri@0.4.5)(@astrojs/starlight@0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)))(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))':
+  '@silarhi/docs-kit@0.9.1(@astrojs/markdown-satteri@0.4.5)(@astrojs/starlight@0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)))(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))':
     dependencies:
-      '@astrojs/starlight': 0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
+      '@astrojs/starlight': 0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
       '@fontsource-variable/montserrat': 5.3.0
       astro: 7.4.2(@types/node@24.19.2)(yaml@2.9.1)
       astro-og-canvas: 0.13.2(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
-      starlight-llms-txt: 0.12.0(@astrojs/markdown-satteri@0.4.5)(@astrojs/starlight@0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)))(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
-      starlight-versions: 0.10.1(@astrojs/starlight@0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)))
+      starlight-llms-txt: 0.12.0(@astrojs/markdown-satteri@0.4.5)(@astrojs/starlight@0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)))(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
+      starlight-versions: 0.10.1(@astrojs/starlight@0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)))
     transitivePeerDependencies:
       - '@astrojs/markdown-remark'
       - '@astrojs/markdown-satteri'
@@ -3889,10 +3889,10 @@ snapshots:
 
   space-separated-tokens@2.0.2: {}
 
-  starlight-llms-txt@0.12.0(@astrojs/markdown-satteri@0.4.5)(@astrojs/starlight@0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)))(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)):
+  starlight-llms-txt@0.12.0(@astrojs/markdown-satteri@0.4.5)(@astrojs/starlight@0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)))(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1)):
     dependencies:
       '@astrojs/mdx': 8.1.1(@astrojs/markdown-satteri@0.4.5)(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
-      '@astrojs/starlight': 0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
+      '@astrojs/starlight': 0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
       '@types/hast': 3.0.5
       '@types/micromatch': 4.0.10
       astro: 7.4.2(@types/node@24.19.2)(yaml@2.9.1)
@@ -3910,9 +3910,9 @@ snapshots:
       - '@astrojs/markdown-satteri'
       - supports-color
 
-  starlight-versions@0.10.1(@astrojs/starlight@0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))):
+  starlight-versions@0.10.1(@astrojs/starlight@0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))):
     dependencies:
-      '@astrojs/starlight': 0.42.7(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
+      '@astrojs/starlight': 0.42.8(astro@7.4.2(@types/node@24.19.2)(yaml@2.9.1))
       '@pagefind/default-ui': 1.5.2
       github-slugger: 2.0.0
       mdast-util-mdx-jsx: 3.2.0
