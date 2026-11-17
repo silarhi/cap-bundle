@@ -12,6 +12,7 @@ declare global {
     CAP_PAKO_URL?: string;
     CAP_CSS_NONCE?: string;
     CAP_SCRIPT_NONCE?: string;
+    CAP_ISOLATE?: boolean;
     CAP_DONT_SKIP_REDEFINE?: boolean;
     CAP_DEBUG?: boolean;
     CAP_SILENT?: boolean;
@@ -24,7 +25,7 @@ interface CapProgressEventDetail {
 interface CapSolveEventDetail {
   token: string;
 }
-type CapErrorCode = "missing_endpoint" | "network_error" | "challenge_parse_error" | "challenge_unsupported" | "solve_failed" | "instr_timeout" | "instr_blocked" | "redeem_failed" | "invalid_solution" | "invalid_expires" | "wasm_load_failed" | "worker_spawn_failed" | "unknown";
+type CapErrorCode = "missing_endpoint" | "network_error" | "challenge_parse_error" | "challenge_unsupported" | "solve_failed" | "instr_timeout" | "instr_blocked" | "instr_csp_blocked" | "instr_natives_tampered" | "instr_env_failed" | "instr_script_failed" | "redeem_failed" | "invalid_solution" | "invalid_expires" | "wasm_load_failed" | "worker_spawn_failed" | "unknown";
 interface CapErrorEventDetail {
   isCap: boolean;
   code: CapErrorCode;
