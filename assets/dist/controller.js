@@ -1,5 +1,5 @@
-import { a as reset, o as solve } from "./core.js";
 import { t as connect } from "./connect.js";
+import { a as reset, o as solve } from "./core.js";
 import { Controller } from "@hotwired/stimulus";
 // src/controller.ts
 /**

@@ -1,6 +1,6 @@
-import { i as loadWidget, n as configure, r as install } from "./core.js";
 import { installLive } from "./live.js";
 import { installTurbo } from "./turbo.js";
+import { i as loadWidget, n as configure, r as install } from "./core.js";
 // src/adapters/index.ts
 /** The adapters CapType can ask for, by the name of its `adapters` option. */
 const adapters = {
