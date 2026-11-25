@@ -186,7 +186,7 @@ importers:
         version: 5.0.5(vitest@5.0.5)
       cap-widget:
         specifier: ^0.1.58
-        version: 0.1.58
+        version: 0.1.63
       jsdom:
         specifier: ^30.0.0
         version: 30.1.3
@@ -847,8 +847,8 @@ packages:
     resolution: {integrity: sha512-LMDU/U2yA4IPIY8KT0NsNPWEYZvAMkbgyspxJ6btJaYV+WMDOHAZCmB0lsTObiHaRS1V/ztKAl7+TSkTqXyeoA==}
     engines: {node: '>=20.19.0'}
 
-  cap-widget@0.1.58:
-    resolution: {integrity: sha512-7iS/Q++AaiVvWR8xvMSxRwGWY+fV1ZADJNwPzLk4P1gibCmCbS5G6MGOtoUjsj9OxI9+0nkewW6gRsOGDCOZZA==}
+  cap-widget@0.1.63:
+    resolution: {integrity: sha512-8NvncyO7F0OSzpsBuO5pV54eAV7IVLi0P9Ai8WIzxoldCnq4a8O3e6zc433IBZb9tDwqZuwQSzZEKj9katxxuA==}
 
   chai@6.3.0:
     resolution: {integrity: sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==}
@@ -1749,7 +1749,7 @@ snapshots:
 
   cac@7.1.0: {}
 
-  cap-widget@0.1.58: {}
+  cap-widget@0.1.63: {}
 
   chai@6.3.0: {}
 
