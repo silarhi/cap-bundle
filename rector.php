@@ -18,7 +18,8 @@ return RectorConfig::configure()
         'src',
         'tests',
     ])
-    ->withPhpSets(php82: true)
+    ->withPhpSets()
+    ->withComposerBased()
     ->withPreparedSets(
         deadCode: true,
         codeQuality: true,
