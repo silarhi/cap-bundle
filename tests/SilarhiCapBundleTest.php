@@ -53,7 +53,7 @@ final class SilarhiCapBundleTest extends TestCase
 
         self::assertSame([['form_themes' => ['@SilarhiCap/form/cap_widget.html.twig']]], $builder->getExtensionConfig('twig'));
         self::assertSame(
-            [['asset_mapper' => ['paths' => [self::bundleDir() . '/../assets/dist' => '@silarhi/cap-bundle']]]],
+            [['asset_mapper' => ['paths' => [$this->bundleDir() . '/../assets/dist' => '@silarhi/cap-bundle']]]],
             $builder->getExtensionConfig('framework')
         );
     }
@@ -85,7 +85,7 @@ final class SilarhiCapBundleTest extends TestCase
     #[RequiresPhpunit('>=12.0.0')]
     public function testDoesNotPrependTheAssetMapperPathWithoutSymfonyAssetMapper(): void
     {
-        self::hideFromAutoloading(AssetMapperInterface::class);
+        $this->hideFromAutoloading(AssetMapperInterface::class);
         $builder = $this->builder(['FrameworkBundle' => ['path' => (new FrameworkBundle())->getPath()]]);
         $builder->registerExtension(new TwigExtension());
 
@@ -99,7 +99,7 @@ final class SilarhiCapBundleTest extends TestCase
     #[RequiresPhpunit('>=12.0.0')]
     public function testNamesThePackagesToInstallWithoutSymfonyHttpClient(): void
     {
-        self::hideFromAutoloading(Psr18Client::class);
+        $this->hideFromAutoloading(Psr18Client::class);
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessageMatches('/run "composer require symfony\/http-client[^"]*", or set "cap\.http_client" to your own PSR-18 client service\.$/');
@@ -111,7 +111,7 @@ final class SilarhiCapBundleTest extends TestCase
     #[RequiresPhpunit('>=12.0.0')]
     public function testUsesItsOwnPsr18ClientWithoutSymfonyHttpClient(): void
     {
-        self::hideFromAutoloading(Psr18Client::class);
+        $this->hideFromAutoloading(Psr18Client::class);
         $builder = $this->builder([]);
 
         $this->extension()->load([[
@@ -155,7 +155,7 @@ final class SilarhiCapBundleTest extends TestCase
         $extension->prepend($builder);
     }
 
-    private static function bundleDir(): string
+    private function bundleDir(): string
     {
         return dirname((string) (new ReflectionClass(SilarhiCapBundle::class))->getFileName());
     }
@@ -168,7 +168,7 @@ final class SilarhiCapBundleTest extends TestCase
      *
      * @param class-string $class
      */
-    private static function hideFromAutoloading(string $class): void
+    private function hideFromAutoloading(string $class): void
     {
         $loaders = spl_autoload_functions();
         foreach ($loaders as $loader) {

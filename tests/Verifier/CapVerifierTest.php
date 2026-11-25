@@ -60,7 +60,7 @@ final class CapVerifierTest extends TestCase
 
     public function testAnEmptyTokenIsNotSent(): void
     {
-        $result = $this->verifier(static fn () => self::fail('No request expected'))->verify('');
+        $result = $this->verifier(static fn (): never => self::fail('No request expected'))->verify('');
 
         self::assertFalse($result->success);
         self::assertSame(VerificationResult::ERROR_MISSING_RESPONSE, $result->error);
@@ -94,7 +94,7 @@ final class CapVerifierTest extends TestCase
     {
         $logger = new BufferingLogger();
 
-        $this->verifier(static fn () => throw new TransportException('Connection refused'), $logger)->verify('key:abc:def');
+        $this->verifier(static fn (): never => throw new TransportException('Connection refused'), $logger)->verify('key:abc:def');
 
         $logs = [];
         foreach ($logger->cleanLogs() as $log) {
