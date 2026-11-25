@@ -14,14 +14,19 @@ on:
 permissions:
     contents: read
 
-# Supersede outdated runs of a pull request; push runs (head_ref empty) are never cancelled.
+# Supersede outdated runs of a pull request, or of the dispatched runs on a Renovate branch (kept apart from its
+# pull_request runs, which would cancel them); push runs (head_ref empty) are never cancelled.
 concurrency:
-    group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+    group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && format('dispatch-{0}', github.ref_name) || github.head_ref || github.run_id }}
     cancel-in-progress: true
 
 jobs:
     matrix:
         name: Generate job matrix
+        # laminas-ci-matrix-action aborts on workflow_dispatch. The dispatched run tests a commit of the "Rebuild the
+        # widget" workflow, which only touches assets/ and public/: on its PR the matrix holds no more than
+        # "Composer validate & normalize", already run on Renovate's commit. Lint, Test, Build and E2E still gate it.
+        if: github.event_name != 'workflow_dispatch'
         runs-on: ubuntu-latest
         timeout-minutes: 5
         outputs:
@@ -34,6 +39,7 @@ jobs:
     qa:
         name: QA Checks
         needs: [matrix]
+        if: github.event_name != 'workflow_dispatch'
         runs-on: ${{ matrix.operatingSystem }}
         timeout-minutes: 15
         strategy:

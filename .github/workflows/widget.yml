@@ -1,9 +1,10 @@
 name: 'Rebuild the widget'
 
 # The bundle ships the Cap widget (public/widget/), copied by `pnpm build`. Renovate bumps cap-widget and @cap.js/wasm
-# without building: this workflow commits the rebuilt files to its branch, then runs the CI on that commit, which a
-# push made with GITHUB_TOKEN would not trigger. The E2E job tests the new widget against a real Cap server before the
-# PR auto-merges.
+# without building: this workflow commits the rebuilt files to its branch, then dispatches the CI on that commit. The
+# pull_request runs of a GITHUB_TOKEN push wait for a manual approval (github-actions[bot] is a first-time contributor),
+# so the dispatched run is the one that reports "CI passed". The E2E job tests the new widget against a real Cap server
+# before the PR auto-merges.
 on:
     pull_request:
         paths:
