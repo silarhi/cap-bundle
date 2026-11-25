@@ -1,6 +1,6 @@
-import { a as reset, o as solve } from "./core.js";
-import { t as connect } from "./connect.js";
 import { Controller } from "@hotwired/stimulus";
+import { t as connect } from "./connect.js";
+import { a as reset, o as solve } from "./core.js";
 // src/controller.ts
 /**
 * Registered by StimulusBundle as "silarhi--cap-bundle--cap", the controller CapType puts on every challenge: it
