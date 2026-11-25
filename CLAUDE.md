@@ -143,8 +143,9 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
 - **QA tools** are bumped via `composer bump:tools`. Do not add `config.bump-after-update`.
 - The bundle ships the widget: `cap-widget` and `@cap.js/wasm` (one Renovate group) are copied to `public/widget/`
   by `pnpm build`. On Renovate's branches, `.github/workflows/widget.yml` commits the rebuilt files with
-  `GITHUB_TOKEN`, then dispatches the CI (a `GITHUB_TOKEN` push triggers no workflow), whose E2E job tests the new
-  widget. By hand: bump both, `pnpm build`, commit the result.
+  `GITHUB_TOKEN`, then dispatches the CI (the `pull_request` runs of that push wait for a manual approval), whose E2E
+  job tests the new widget. The dispatched run skips the Laminas matrix, which aborts on `workflow_dispatch`. By hand:
+  bump both, `pnpm build`, commit the result.
 
 ## API Documentation
 
