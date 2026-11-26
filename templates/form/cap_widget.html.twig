@@ -15,6 +15,8 @@
             'data-cap-worker-count': worker_count,
             'data-cap-troubleshooting-url': troubleshooting_url,
             'data-cap-disable-haptics': haptics ? null : true,
+            'data-silarhi-cap-position': mode == 'floating' ? floating_position : null,
+            'data-silarhi-cap-offset': mode == 'floating' ? floating_offset : null,
         } -%}
         {%- for key, label in i18n -%}
             {%- set cap_attr = cap_attr|merge({('data-cap-i18n-' ~ key): label}) -%}
@@ -23,6 +25,12 @@
         {%- if mode == 'invisible' -%}
             {# Solved by the bundle's script with Cap's programmatic mode: no UI to hide #}
             <input type="hidden" id="{{ id }}" name="{{ full_name }}" {{ block('attributes') }}>
+        {%- elseif mode == 'floating' -%}
+            {# Hidden by a wrapper, as <cap-widget>'s own display beats the hidden attribute, until a submit shows it next
+               to the button. Not required: the browser would refuse to submit for a control it cannot focus #}
+            <div data-silarhi-cap-floating hidden>
+                <cap-widget id="{{ id }}" data-cap-hidden-field-name="{{ full_name }}" {{ block('attributes') }}></cap-widget>
+            </div>
         {%- else -%}
             {# The widget injects <input type="hidden" name="{{ full_name }}"> itself, and fills it once solved #}
             <cap-widget id="{{ id }}" data-cap-hidden-field-name="{{ full_name }}"{% if required %} required{% endif %} {{ block('attributes') }}></cap-widget>

@@ -42,6 +42,17 @@ test('an unticked checkbox widget is solved on submit in a novalidate form', asy
     await expect(page.locator('#result')).toHaveText('checkbox accepted')
 })
 
+test('a floating widget shows up on submit, solves, then the form is accepted', async ({ page }) => {
+    await page.goto('/')
+    const wrapper = page.locator('[data-silarhi-cap-floating]:has(#floating_captcha)')
+    await expect(wrapper).toBeHidden()
+
+    await page.fill('#floating_name', 'Cid')
+    await page.click('#floating_send')
+    await expect(wrapper).toBeVisible()
+    await expect(page.locator('#result')).toHaveText('floating accepted')
+})
+
 test('a forged token is rejected by the Cap server', async ({ page }) => {
     await page.goto('/')
     await page.fill('#invisible_name', 'Eve')

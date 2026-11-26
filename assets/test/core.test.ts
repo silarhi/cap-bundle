@@ -196,6 +196,53 @@ describe('checkbox challenge', () => {
     })
 })
 
+describe('floating challenge', () => {
+    const html = `<form novalidate>
+        <div data-silarhi-cap-floating hidden>
+            <cap-widget data-silarhi-cap="floating" data-cap-hidden-field-name="contact[cap]" data-silarhi-cap-position="bottom" data-silarhi-cap-offset="12"></cap-widget>
+        </div>
+        <button type="submit">Send</button>
+    </form>`
+
+    it('shows the widget next to the button while it solves, then hides it and submits', async () => {
+        const form = render(html)
+        const wrapper = form.querySelector('[data-silarhi-cap-floating]') as HTMLElement
+        const button = form.querySelector('button') as HTMLButtonElement
+        button.getBoundingClientRect = () => DOMRect.fromRect({ x: 100, y: 200, width: 80, height: 30 })
+        const done = submitted(form)
+
+        button.click()
+        expect(wrapper.hidden).toBe(false)
+        expect(wrapper.style.position).toBe('absolute')
+        // 12px below the button: its bottom is at 230
+        expect(wrapper.style.top).toBe('242px')
+
+        const event = await done
+        expect(event.submitter).toBe(button)
+        expect(wrapper.hidden).toBe(true)
+        expect((form.querySelector('cap-widget') as FakeWidget).token).toBe('token-1')
+    })
+
+    it('keeps a failed widget on the page, with its error', async () => {
+        FakeWidget.fail = true
+        const form = render(html)
+        const done = submitted(form)
+
+        form.requestSubmit()
+        await done
+        expect((form.querySelector('[data-silarhi-cap-floating]') as HTMLElement).hidden).toBe(false)
+    })
+
+    it('hides the widget again on reset', async () => {
+        FakeWidget.fail = true
+        const form = render(html)
+        await solve(form)
+
+        reset(form)
+        expect((form.querySelector('[data-silarhi-cap-floating]') as HTMLElement).hidden).toBe(true)
+    })
+})
+
 describe('several challenges on a page', () => {
     const html = `
         <form id="contact">

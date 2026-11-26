@@ -24,14 +24,15 @@ Stimulus or no build step at all.
 ```
 src/
 ├── Form/CapType.php         # The field: view vars, options (mode, locale, worker_count, troubleshooting_url, i18n,
-│                            #   csp_nonce, haptics)
-├── Form/CapMode.php         # Enum of the mode option (Checkbox, Invisible); CapType's normalizer also takes its values
+│                            #   csp_nonce, haptics, floating_position, floating_offset)
+├── Form/CapMode.php         # Enum of the mode option (Checkbox, Floating, Invisible); the normalizer takes its values
 ├── Validator/               # Cap constraint (#[Cap]) and CapValidator (enabled: false accepts everything)
 ├── Verifier/                # CapVerifierInterface, CapVerifier (PSR-18 client + PSR-17 factories, never throws),
 │                            #   VerificationResult
 └── SilarhiCapBundle.php     # `cap:` configuration tree (extensionAlias), `cap.*` services, prepends the form theme
                              #   and the AssetMapper path
-templates/form/cap_widget.html.twig  # silarhi_cap_widget block: <cap-widget> or <input type="hidden"> + <script type="module">
+templates/form/cap_widget.html.twig  # silarhi_cap_widget block: <cap-widget>, <div hidden><cap-widget> (floating) or
+                                     #   <input type="hidden"> + <script type="module">
 translations/                # validators.<locale>.xlf: cap.validation.missing / cap.validation.invalid (keys, not
                              #   English sentences: the translator is needed)
 assets/
@@ -99,6 +100,10 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   solves, then `requestSubmit(submitter)`. A failed solve submits all the same (once, through `bypassedForms`) so that
   the server answers with its error. `Symbol.for('@silarhi/cap-bundle')` keeps it idempotent across copies of the
   module (public/cap.js and an application bundle).
+- **Floating mode is a hidden wrapper.** `<div data-silarhi-cap-floating hidden>` around the widget (its own
+  `display` beats `hidden`); the submit handling unhides it, places it with `position: absolute` through the CSSOM
+  (CSP-safe, unlike a style attribute) next to the submitter, solves, hides it 500 ms after. Never `required`: the
+  browser refuses to submit a form whose required control is not focusable. Cap's `cap-floating.js` is not used.
 - **Log levels**: `CapVerifier` logs the token errors a visitor causes (`TOKEN_ERRORS`) as `info`, any other rejection
   of the Cap server (wrong secret, rate limit...) as `error`.
 - **`solve()` returns at once while a solve is running** (the visitor clicked): `solveWidget()` waits for the widget's

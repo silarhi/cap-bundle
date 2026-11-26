@@ -12,7 +12,16 @@ export const SELECTOR = '[data-silarhi-cap]'
 /** How long the submit of an invisible challenge waits for the cap-widget script before giving up. */
 const WIDGET_TIMEOUT = 10_000
 
+/** The wrapper that hides a floating widget until a submit shows it. */
+const FLOATING_SELECTOR = '[data-silarhi-cap-floating]'
+
+/** How long a solved floating widget shows its checkmark before the form is submitted. */
+const FLOATING_HIDE_DELAY = 500
+
 export type CapWidgetElement = CapWidget
+
+/** A challenge CapType renders: a `<cap-widget>`, or the hidden input of an invisible one. */
+export type CapField = CapWidgetElement | HTMLInputElement
 
 /** Shared by every copy of this module on the page: the bundle's script and an application bundle may both load it. */
 const INSTALLED = Symbol.for('@silarhi/cap-bundle')
@@ -80,7 +89,7 @@ export function loadWidget(element: HTMLElement): void {
  * Resolves false when one failed: the widget shows why, an invisible challenge stays empty.
  */
 export async function solve(target: Element): Promise<boolean> {
-    const results = await Promise.all(fieldsOf(target).map(solveField))
+    const results = await Promise.all(fieldsOf(target).map((field) => solveField(field)))
 
     return results.every(Boolean)
 }
@@ -97,6 +106,9 @@ export function reset(target: Element | Document): void {
         } else if (hasToken(field)) {
             field.reset()
         }
+        if (isFloating(field)) {
+            hideFloating(field)
+        }
     }
 }
 
@@ -111,34 +123,106 @@ export function tokenOf(field: Element): string {
     return (field as Partial<CapWidgetElement>).token ?? ''
 }
 
-function fieldsOf(target: Element | Document): Array<CapWidgetElement | HTMLInputElement> {
+function fieldsOf(target: Element | Document): CapField[] {
     if (target instanceof Element && target.matches(SELECTOR)) {
-        return [target as CapWidgetElement | HTMLInputElement]
+        return [target as CapField]
     }
 
-    return Array.from(target.querySelectorAll<CapWidgetElement | HTMLInputElement>(SELECTOR))
+    return Array.from(target.querySelectorAll<CapField>(SELECTOR))
 }
 
 function isInvisible(field: Element): field is HTMLInputElement {
     return field instanceof HTMLInputElement
 }
 
-function hasToken(field: CapWidgetElement | HTMLInputElement): boolean {
+function isFloating(field: CapField): field is CapWidgetElement {
+    return !isInvisible(field) && field.dataset.silarhiCap === 'floating'
+}
+
+function hasToken(field: CapField): boolean {
     return isInvisible(field) ? field.value !== '' : Boolean(field.token)
 }
 
-function solveField(field: CapWidgetElement | HTMLInputElement): Promise<boolean> {
+/**
+ * @param anchor the button a floating widget shows up next to: the submitter, or the first submit button of the form
+ */
+function solveField(field: CapField, anchor: Element | null = null): Promise<boolean> {
     if (hasToken(field)) {
         return Promise.resolve(true)
     }
 
     let pending = solving.get(field)
     if (!pending) {
-        pending = (isInvisible(field) ? solveInvisible(field) : solveWidget(field)).finally(() => solving.delete(field))
+        const solved = isInvisible(field)
+            ? solveInvisible(field)
+            : isFloating(field)
+              ? solveFloating(field, anchor)
+              : solveWidget(field)
+        pending = solved.finally(() => solving.delete(field))
         solving.set(field, pending)
     }
 
     return pending
+}
+
+async function solveFloating(widget: CapWidgetElement, anchor: Element | null): Promise<boolean> {
+    showFloating(widget, anchor ?? widget.closest('form')?.querySelector('[type="submit"]') ?? null)
+
+    const solved = await solveWidget(widget)
+    // A solved widget shows its checkmark, then makes way. A failed one stays, with its error.
+    if (solved) {
+        await new Promise((resolve) => setTimeout(resolve, FLOATING_HIDE_DELAY))
+        hideFloating(widget)
+    }
+
+    return solved
+}
+
+function showFloating(widget: CapWidgetElement, anchor: Element | null): void {
+    const wrapper = widget.closest<HTMLElement>(FLOATING_SELECTOR)
+    if (!wrapper) {
+        return
+    }
+
+    wrapper.hidden = false
+    if (!anchor) {
+        return
+    }
+
+    // Set through the CSSOM, not a style attribute: a strict Content-Security-Policy allows it
+    wrapper.style.position = 'absolute'
+    wrapper.style.zIndex = '99999'
+
+    // `position: absolute` places the wrapper in its containing block, getBoundingClientRect() in the viewport
+    const parent = wrapper.offsetParent
+    const container =
+        parent && (parent !== document.body || getComputedStyle(parent).position !== 'static')
+            ? parent
+            : document.documentElement
+    const containerRect = container.getBoundingClientRect()
+    const anchorRect = anchor.getBoundingClientRect()
+    const offset = Number.parseInt(widget.dataset.silarhiCapOffset ?? '', 10) || 8
+
+    const left = Math.max(
+        2,
+        Math.min(
+            anchorRect.left + (anchorRect.width - wrapper.offsetWidth) / 2,
+            window.innerWidth - wrapper.offsetWidth
+        )
+    )
+    const top =
+        widget.dataset.silarhiCapPosition === 'bottom'
+            ? Math.min(anchorRect.bottom + offset, window.innerHeight - wrapper.offsetHeight)
+            : Math.max(0, anchorRect.top - wrapper.offsetHeight - offset)
+    wrapper.style.left = `${left - containerRect.left}px`
+    wrapper.style.top = `${top - containerRect.top}px`
+}
+
+function hideFloating(widget: CapWidgetElement): void {
+    const wrapper = widget.closest<HTMLElement>(FLOATING_SELECTOR)
+    if (wrapper) {
+        wrapper.hidden = true
+    }
 }
 
 async function solveWidget(widget: CapWidgetElement): Promise<boolean> {
@@ -253,7 +337,7 @@ function onSubmit(event: Event): void {
     form.dispatchEvent(new CustomEvent('cap:solving', { bubbles: true }))
 
     const submitter = (event as SubmitEvent).submitter
-    void Promise.all(pending.map(solveField)).then((results) => {
+    void Promise.all(pending.map((field) => solveField(field, submitter))).then((results) => {
         busyForms.delete(form)
         form.removeAttribute('aria-busy')
 

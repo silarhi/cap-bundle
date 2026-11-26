@@ -140,12 +140,30 @@ final class CapTypeTest extends KernelTestCase
         self::assertCount(1, $crawler->filter('script[type="module"]'));
     }
 
+    public function testRendersAFloatingChallengeInAHiddenWrapper(): void
+    {
+        self::bootKernel();
+
+        $crawler = $this->render($this->createForm(['mode' => CapMode::Floating, 'floating_position' => 'bottom', 'floating_offset' => 12]));
+        $wrapper = $crawler->filter('div[data-silarhi-cap-floating]');
+        $widget = $wrapper->filter('cap-widget');
+
+        self::assertSame('', $wrapper->attr('hidden'));
+        self::assertCount(1, $widget);
+        self::assertSame('floating', $widget->attr('data-silarhi-cap'));
+        self::assertSame('form[cap]', $widget->attr('data-cap-hidden-field-name'));
+        self::assertSame('bottom', $widget->attr('data-silarhi-cap-position'));
+        self::assertSame('12', $widget->attr('data-silarhi-cap-offset'));
+        self::assertNull($widget->attr('required'), 'The browser would not submit a required control it cannot show');
+    }
+
     public function testTurnsTheHapticsOff(): void
     {
         self::bootKernel();
 
         $widget = $this->render($this->createForm())->filter('cap-widget');
         self::assertNull($widget->attr('data-cap-disable-haptics'));
+        self::assertNull($widget->attr('data-silarhi-cap-position'), 'Floating mode only');
 
         $widget = $this->render($this->createForm(['haptics' => false]))->filter('cap-widget');
         self::assertNotNull($widget->attr('data-cap-disable-haptics'));
@@ -166,7 +184,7 @@ final class CapTypeTest extends KernelTestCase
 
         $this->expectException(InvalidOptionsException::class);
 
-        $this->createForm(['mode' => 'floating']);
+        $this->createForm(['mode' => 'popup']);
     }
 
     public function testAcceptsATokenTheServerAccepts(): void

@@ -8,6 +8,10 @@
 const SELECTOR = "[data-silarhi-cap]";
 /** How long the submit of an invisible challenge waits for the cap-widget script before giving up. */
 const WIDGET_TIMEOUT = 1e4;
+/** The wrapper that hides a floating widget until a submit shows it. */
+const FLOATING_SELECTOR = "[data-silarhi-cap-floating]";
+/** How long a solved floating widget shows its checkmark before the form is submitted. */
+const FLOATING_HIDE_DELAY = 500;
 /** Shared by every copy of this module on the page: the bundle's script and an application bundle may both load it. */
 const INSTALLED = Symbol.for("@silarhi/cap-bundle");
 const solving = /* @__PURE__ */ new WeakMap();
@@ -60,17 +64,20 @@ function loadWidget(element) {
 * Resolves false when one failed: the widget shows why, an invisible challenge stays empty.
 */
 async function solve(target) {
-	return (await Promise.all(fieldsOf(target).map(solveField))).every(Boolean);
+	return (await Promise.all(fieldsOf(target).map((field) => solveField(field)))).every(Boolean);
 }
 /**
 * Forgets the tokens of a form, a field or the whole document. The Turbo adapter resets them for you; call it after
 * submitting a form with fetch() yourself and keeping it on the page, as a token is single-use.
 */
 function reset(target) {
-	for (const field of fieldsOf(target)) if (isInvisible(field)) {
-		field.value = "";
-		invisibleCaps.get(field)?.reset();
-	} else if (hasToken(field)) field.reset();
+	for (const field of fieldsOf(target)) {
+		if (isInvisible(field)) {
+			field.value = "";
+			invisibleCaps.get(field)?.reset();
+		} else if (hasToken(field)) field.reset();
+		if (isFloating(field)) hideFloating(field);
+	}
 }
 /**
 * The token of a challenge, an empty string when it has none: for adapters that send it themselves.
@@ -86,17 +93,52 @@ function fieldsOf(target) {
 function isInvisible(field) {
 	return field instanceof HTMLInputElement;
 }
+function isFloating(field) {
+	return !isInvisible(field) && field.dataset.silarhiCap === "floating";
+}
 function hasToken(field) {
 	return isInvisible(field) ? field.value !== "" : Boolean(field.token);
 }
-function solveField(field) {
+/**
+* @param anchor the button a floating widget shows up next to: the submitter, or the first submit button of the form
+*/
+function solveField(field, anchor = null) {
 	if (hasToken(field)) return Promise.resolve(true);
 	let pending = solving.get(field);
 	if (!pending) {
-		pending = (isInvisible(field) ? solveInvisible(field) : solveWidget(field)).finally(() => solving.delete(field));
+		pending = (isInvisible(field) ? solveInvisible(field) : isFloating(field) ? solveFloating(field, anchor) : solveWidget(field)).finally(() => solving.delete(field));
 		solving.set(field, pending);
 	}
 	return pending;
+}
+async function solveFloating(widget, anchor) {
+	showFloating(widget, anchor ?? widget.closest("form")?.querySelector("[type=\"submit\"]") ?? null);
+	const solved = await solveWidget(widget);
+	if (solved) {
+		await new Promise((resolve) => setTimeout(resolve, FLOATING_HIDE_DELAY));
+		hideFloating(widget);
+	}
+	return solved;
+}
+function showFloating(widget, anchor) {
+	const wrapper = widget.closest(FLOATING_SELECTOR);
+	if (!wrapper) return;
+	wrapper.hidden = false;
+	if (!anchor) return;
+	wrapper.style.position = "absolute";
+	wrapper.style.zIndex = "99999";
+	const parent = wrapper.offsetParent;
+	const containerRect = (parent && (parent !== document.body || getComputedStyle(parent).position !== "static") ? parent : document.documentElement).getBoundingClientRect();
+	const anchorRect = anchor.getBoundingClientRect();
+	const offset = Number.parseInt(widget.dataset.silarhiCapOffset ?? "", 10) || 8;
+	const left = Math.max(2, Math.min(anchorRect.left + (anchorRect.width - wrapper.offsetWidth) / 2, window.innerWidth - wrapper.offsetWidth));
+	const top = widget.dataset.silarhiCapPosition === "bottom" ? Math.min(anchorRect.bottom + offset, window.innerHeight - wrapper.offsetHeight) : Math.max(0, anchorRect.top - wrapper.offsetHeight - offset);
+	wrapper.style.left = `${left - containerRect.left}px`;
+	wrapper.style.top = `${top - containerRect.top}px`;
+}
+function hideFloating(widget) {
+	const wrapper = widget.closest(FLOATING_SELECTOR);
+	if (wrapper) wrapper.hidden = true;
 }
 async function solveWidget(widget) {
 	if (!await widgetDefined()) return false;
@@ -163,7 +205,7 @@ function onSubmit(event) {
 	form.setAttribute("aria-busy", "true");
 	form.dispatchEvent(new CustomEvent("cap:solving", { bubbles: true }));
 	const submitter = event.submitter;
-	Promise.all(pending.map(solveField)).then((results) => {
+	Promise.all(pending.map((field) => solveField(field, submitter))).then((results) => {
 		busyForms.delete(form);
 		form.removeAttribute("aria-busy");
 		const solved = results.every(Boolean);
