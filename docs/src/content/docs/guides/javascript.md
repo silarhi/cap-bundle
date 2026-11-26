@@ -190,15 +190,35 @@ import { configure, connect, install, loadWidget, reset, solve } from '@silarhi/
 
 Dispatched on the form, bubbling, when the bundle solves challenges before submitting it:
 
-| Event         | When                                                                          |
-| ------------- | ----------------------------------------------------------------------------- |
-| `cap:solving` | The visitor submitted, challenges are being solved: the form is `aria-busy`   |
-| `cap:solved`  | Solved: the form is submitted again, with the same submit button              |
-| `cap:failed`  | A challenge failed: the form is submitted all the same, the server rejects it |
+| Event          | `event.detail`        | When                                                                          |
+| -------------- | --------------------- | ----------------------------------------------------------------------------- |
+| `cap:solving`  | `{ fields }`          | The visitor submitted, challenges are being solved: the form is `aria-busy`   |
+| `cap:solved`   | `{ fields }`          | Solved: the form is submitted again, with the same submit button              |
+| `cap:failed`   | `{ fields, error }`   | A challenge failed: the form is submitted all the same, the server rejects it |
+| `cap:progress` | `{ field, progress }` | A challenge progressed, from `0` to `100`, whatever started solving it        |
+
+`fields` are the challenges being solved (`<cap-widget>` elements and the hidden inputs of invisible ones), `error`
+is Cap's message for the first one that failed (`null` without one). `cap:progress` is dispatched on the form of the
+challenge, on the challenge itself outside a form, for every mode: it is the way to show the progress of an invisible
+challenge, whose widget is out of the page.
 
 ```js
 document.addEventListener('cap:solving', (event) => {
     event.target.querySelector('[type=submit]')?.classList.add('btn-loading')
+})
+
+document.addEventListener('cap:progress', (event) => {
+    event.target.querySelector('.progress-bar')?.style.setProperty('width', `${event.detail.progress}%`)
+})
+```
+
+With TypeScript, the details are exported: `CapSolveDetail`, `CapFailedDetail`, `CapProgressDetail`.
+
+```ts
+import type { CapProgressDetail } from '@silarhi/cap-bundle'
+
+form.addEventListener('cap:progress', (event) => {
+    const { progress } = (event as CustomEvent<CapProgressDetail>).detail
 })
 ```
 

@@ -8,12 +8,14 @@ export class FakeWidget extends HTMLElement {
 
     async solve(): Promise<SolveResult> {
         const solve = ++FakeWidget.solves
+        this.dispatchEvent(new CustomEvent('progress', { bubbles: true, composed: true, detail: { progress: 0 } }))
         await Promise.resolve()
         if (FakeWidget.fail) {
             this.dispatchEvent(new CustomEvent('error', { detail: { message: 'failed' } }))
             return undefined
         }
         this.token = `token-${solve}`
+        this.dispatchEvent(new CustomEvent('progress', { bubbles: true, composed: true, detail: { progress: 100 } }))
         this.dispatchEvent(new CustomEvent('solve', { detail: { token: this.token } }))
         return { success: true, token: this.token }
     }

@@ -243,6 +243,63 @@ describe('floating challenge', () => {
     })
 })
 
+describe('events', () => {
+    const html = `<form novalidate>
+        <cap-widget data-silarhi-cap="checkbox" data-cap-hidden-field-name="contact[cap]"></cap-widget>
+        <input type="hidden" name="contact[cap2]" data-silarhi-cap="invisible" data-cap-api-endpoint="https://cap.test/key/">
+    </form>`
+
+    it('names the challenges a form solves', async () => {
+        const form = render(html)
+        const fields = Array.from(form.querySelectorAll('[data-silarhi-cap]'))
+        const solving = vi.fn()
+        const solved = vi.fn()
+        form.addEventListener('cap:solving', solving)
+        form.addEventListener('cap:solved', solved)
+        const done = submitted(form)
+
+        form.requestSubmit()
+        await done
+        expect(solving.mock.calls[0]?.[0].detail).toEqual({ fields })
+        expect(solved.mock.calls[0]?.[0].detail).toEqual({ fields })
+    })
+
+    it('gives the error of the challenge that failed', async () => {
+        FakeWidget.fail = true
+        const form = render(html)
+        const failed = vi.fn()
+        form.addEventListener('cap:failed', failed)
+        const done = submitted(form)
+
+        form.requestSubmit()
+        await done
+        expect(failed.mock.calls[0]?.[0].detail.error).toBe('failed')
+    })
+
+    it('reports the progress of each challenge on its form', async () => {
+        const form = render(html)
+        const progress = vi.fn((event: CustomEvent) => [event.detail.field.tagName, event.detail.progress])
+        form.addEventListener('cap:progress', progress as unknown as EventListener)
+
+        await solve(form)
+        expect(progress.mock.results.map((result) => result.value)).toEqual([
+            ['CAP-WIDGET', 0],
+            ['INPUT', 0],
+            ['CAP-WIDGET', 100],
+            ['INPUT', 100],
+        ])
+    })
+
+    it('ignores the progress events of other elements', () => {
+        const form = render(`<form><video></video></form>`)
+        const progress = vi.fn()
+        form.addEventListener('cap:progress', progress)
+
+        form.querySelector('video')?.dispatchEvent(new CustomEvent('progress', { detail: { progress: 50 } }))
+        expect(progress).not.toHaveBeenCalled()
+    })
+})
+
 describe('several challenges on a page', () => {
     const html = `
         <form id="contact">

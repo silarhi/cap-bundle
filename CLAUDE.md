@@ -106,6 +106,9 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   browser refuses to submit a form whose required control is not focusable. Cap's `cap-floating.js` is not used.
 - **Log levels**: `CapVerifier` logs the token errors a visitor causes (`TOKEN_ERRORS`) as `info`, any other rejection
   of the Cap server (wrong secret, rate limit...) as `error`.
+- **Events**: `cap:solving` / `cap:solved` / `cap:failed` on the form with `{ fields }` (and `error`, from the
+  widget's `error` events), `cap:progress` forwarded from the widget's `progress` (a capture listener on the document
+  for widgets, the `Cap` instance for invisible inputs, whose widget lives on `<html>`).
 - **`solve()` returns at once while a solve is running** (the visitor clicked): `solveWidget()` waits for the widget's
   `solve` / `error` events instead of the promise.
 - **Live Components validate on every re-render** (`ComponentWithFormTrait::submitFormOnRender()` submits the whole

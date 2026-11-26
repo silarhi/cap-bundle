@@ -53,9 +53,32 @@ test('a floating widget shows up on submit, solves, then the form is accepted', 
     await expect(page.locator('#result')).toHaveText('floating accepted')
 })
 
+test('the progress of an invisible challenge is reported on its form', async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => {
+        const events: number[] = []
+        ;(window as unknown as { progress: number[] }).progress = events
+        document.querySelector('form[name="invisible"]')?.addEventListener('cap:progress', (event) => {
+            events.push((event as CustomEvent<{ progress: number }>).detail.progress)
+        })
+    })
+    await page.fill('#invisible_name', 'Ann')
+
+    await expect
+        .poll(() =>
+            page.evaluate(() => {
+                const { progress } = window as unknown as { progress: number[] }
+                return progress[progress.length - 1]
+            })
+        )
+        .toBe(100)
+})
+
 test('a forged token is rejected by the Cap server', async ({ page }) => {
     await page.goto('/')
     await page.fill('#invisible_name', 'Eve')
+    // Focusing the form starts solving: forge the token once the real one is in, or the solve overwrites it
+    await expect(page.locator('#invisible_captcha')).toHaveValue(/^.+:.+:.+$/)
     await page.locator('#invisible_captcha').evaluate((input: HTMLInputElement) => {
         input.value = 'forged:token:value'
     })
