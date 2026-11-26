@@ -329,6 +329,55 @@ final class CapTypeTest extends KernelTestCase
         }
     }
 
+    public function testRendersAndVerifiesWithTheSiteKeyOfTheForm(): void
+    {
+        self::bootKernel(['environment' => 'site_keys']);
+        $this->mockCapServer(['success' => true]);
+
+        $crawler = $this->render($this->createForm(['site_key' => 'signup']));
+        self::assertSame('https://cap.example.com/signup-key/', $crawler->filter('cap-widget')->attr('data-cap-api-endpoint'));
+
+        $form = $this->createForm(['site_key' => 'signup']);
+        $form->submit(['name' => 'Jane', 'cap' => 'signup-key:abc:def']);
+        self::assertTrue($form->isValid());
+
+        $form = $this->createForm();
+        $form->submit(['name' => 'Jane', 'cap' => 'site-key:abc:def']);
+        self::assertTrue($form->isValid());
+
+        self::assertSame([
+            ['url' => 'https://cap.example.com/signup-key/siteverify', 'body' => '{"secret":"signup-secret","response":"signup-key:abc:def"}'],
+            ['url' => 'https://cap.example.com/site-key/siteverify', 'body' => '{"secret":"secret","response":"site-key:abc:def"}'],
+        ], $this->capServer()->requests);
+    }
+
+    public function testTheConstraintVerifiesWithItsSiteKey(): void
+    {
+        self::bootKernel(['environment' => 'site_keys']);
+        $this->mockCapServer(['success' => true]);
+
+        $message = new class {
+            #[Cap(siteKey: 'signup')]
+            public ?string $token = 'signup-key:abc:def';
+        };
+
+        $validator = self::getContainer()->get('test.validator');
+        self::assertInstanceOf(ValidatorInterface::class, $validator);
+
+        self::assertCount(0, $validator->validate($message));
+        self::assertSame('https://cap.example.com/signup-key/siteverify', $this->capServer()->requests[0]['url'] ?? null);
+    }
+
+    public function testRejectsASiteKeyThatIsNotConfigured(): void
+    {
+        self::bootKernel(['environment' => 'site_keys']);
+
+        $this->expectException(InvalidOptionsException::class);
+        $this->expectExceptionMessage('The Cap site key "newsletter" is not configured: add it to "cap.site_keys".');
+
+        $this->createForm(['site_key' => 'newsletter']);
+    }
+
     /**
      * @param array<string, mixed> $options
      *

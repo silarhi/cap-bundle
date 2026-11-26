@@ -19,7 +19,9 @@ use Silarhi\CapBundle\Validator\CapValidator;
 use Silarhi\CapBundle\Verifier\CapVerifierInterface;
 use Silarhi\CapBundle\Verifier\VerificationResult;
 use stdClass;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 use Symfony\Component\Validator\Exception\UnexpectedValueException;
 use Symfony\Component\Validator\Test\ConstraintValidatorTestCase;
@@ -98,6 +100,31 @@ final class CapValidatorTest extends ConstraintValidatorTestCase
 
         $this->assertNoViolation();
         self::assertSame([], $this->verified);
+    }
+
+    public function testVerifiesWithTheSiteKeyOfTheConstraint(): void
+    {
+        $signup = new class implements CapVerifierInterface {
+            public function verify(string $token): VerificationResult
+            {
+                return VerificationResult::success();
+            }
+        };
+        $this->validator = new CapValidator($this->verifier(), true, new ServiceLocator(['signup' => static fn (): CapVerifierInterface => $signup]));
+        $this->validator->initialize($this->context);
+
+        $this->validator->validate('signup-token', new Cap(siteKey: 'signup'));
+
+        $this->assertNoViolation();
+        self::assertSame([], $this->verified, 'The default site key is not asked');
+    }
+
+    public function testRejectsASiteKeyThatIsNotConfigured(): void
+    {
+        $this->expectException(ConstraintDefinitionException::class);
+        $this->expectExceptionMessage('The Cap site key "signup" is not configured: add it to "cap.site_keys".');
+
+        $this->validator->validate('signup-token', new Cap(siteKey: 'signup'));
     }
 
     public function testRejectsOtherConstraints(): void

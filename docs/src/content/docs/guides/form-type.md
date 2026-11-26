@@ -103,20 +103,21 @@ Invisible mode needs the JavaScript of the bundle, the checkbox mode only needs 
 
 ## Options
 
-| Option                | Default             | Description                                                                                                   |
-| --------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `mode`                | `CapMode::Checkbox` | `CapMode::Checkbox`, `CapMode::Floating` or `CapMode::Invisible` (or their values: `'checkbox'`...)           |
-| `locale`              | the request locale  | Language of the widget labels (`data-cap-lang`): see [labels and languages](/guides/translations/)            |
-| `i18n`                | `[]`                | Widget labels, keyed by the suffix of their `data-cap-i18n-*` attribute                                       |
-| `worker_count`        | `null`              | Number of solver workers (`data-cap-worker-count`); Cap uses one per CPU core                                 |
-| `troubleshooting_url` | `null`              | The "Troubleshooting" link Cap shows a blocked visitor (`data-cap-troubleshooting-url`)                       |
-| `csp_nonce`           | `null`              | Nonce of the script and of the widget styles: see [Content Security Policy](/guides/content-security-policy/) |
-| `haptics`             | `true`              | `false` turns off the vibrations of the widget on mobile (`data-cap-disable-haptics`)                         |
-| `floating_position`   | `'top'`             | Floating mode: the widget shows up above (`'top'`) or below (`'bottom'`) the submit button                    |
-| `floating_offset`     | `8`                 | Floating mode: the gap between the widget and the submit button, in pixels                                    |
-| `constraints`         | `[new Cap()]`       | Replace it to customize the messages: `[new Cap(message: '…', missingMessage: '…')]`                          |
-| `attr`                | `[]`                | Attributes of the `<cap-widget>` (or of the hidden input), e.g. a `class`                                     |
-| `required`            | `true`              | Checkbox mode: the browser asks to tick the widget before submitting                                          |
+| Option                | Default             | Description                                                                                                    |
+| --------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `mode`                | `CapMode::Checkbox` | `CapMode::Checkbox`, `CapMode::Floating` or `CapMode::Invisible` (or their values: `'checkbox'`...)            |
+| `site_key`            | `null`              | A site key of [`cap.site_keys`](/getting-started/configuration/#several-site-keys), `null` for the default one |
+| `locale`              | the request locale  | Language of the widget labels (`data-cap-lang`): see [labels and languages](/guides/translations/)             |
+| `i18n`                | `[]`                | Widget labels, keyed by the suffix of their `data-cap-i18n-*` attribute                                        |
+| `worker_count`        | `null`              | Number of solver workers (`data-cap-worker-count`); Cap uses one per CPU core                                  |
+| `troubleshooting_url` | `null`              | The "Troubleshooting" link Cap shows a blocked visitor (`data-cap-troubleshooting-url`)                        |
+| `csp_nonce`           | `null`              | Nonce of the script and of the widget styles: see [Content Security Policy](/guides/content-security-policy/)  |
+| `haptics`             | `true`              | `false` turns off the vibrations of the widget on mobile (`data-cap-disable-haptics`)                          |
+| `floating_position`   | `'top'`             | Floating mode: the widget shows up above (`'top'`) or below (`'bottom'`) the submit button                     |
+| `floating_offset`     | `8`                 | Floating mode: the gap between the widget and the submit button, in pixels                                     |
+| `constraints`         | `[new Cap()]`       | Replace it to customize the messages: `[new Cap(message: '…', missingMessage: '…')]`                           |
+| `attr`                | `[]`                | Attributes of the `<cap-widget>` (or of the hidden input), e.g. a `class`                                      |
+| `required`            | `true`              | Checkbox mode: the browser asks to tick the widget before submitting                                           |
 
 `mapped` is `false` and `label` is `false` by default: the widget carries its own label.
 

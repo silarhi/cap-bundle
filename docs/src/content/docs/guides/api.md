@@ -26,6 +26,9 @@ final class ContactRequest
 public function contact(#[MapRequestPayload] ContactRequest $request): JsonResponse
 ```
 
+`#[Cap(siteKey: 'signup')]` verifies the token with one of the
+[other site keys](/getting-started/configuration/#several-site-keys).
+
 On the client, solve the challenge with Cap's [programmatic mode](https://trycap.dev/guide/programmatic) and send the
 token with the payload:
 
@@ -63,7 +66,8 @@ public function __invoke(Request $request): Response
 `verify()` never throws: a Cap server out of reach is a failed verification with the `connection-failed` error.
 It sends the request with the [PSR-18 client](/getting-started/configuration/#the-http-client) of the
 configuration.
-Unlike the constraint, it ignores `enabled: false`.
+Unlike the constraint, it ignores `enabled: false`. The verifier of another site key is autowired by its name:
+`CapVerifierInterface $signupCapVerifier`.
 
 | `VerificationResult::$error` | Meaning                                           |
 | ---------------------------- | ------------------------------------------------- |

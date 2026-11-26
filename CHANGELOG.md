@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Several site keys: `cap.site_keys` names the others (`endpoint`, `secret_key`, `verify_url` each), the `site_key`
+  option of `CapType` and `#[Cap(siteKey: '...')]` pick one. Each has its verifier, autowired as
+  `CapVerifierInterface $<name>CapVerifier`.
 - `CapMode::Floating`: the widget stays hidden until the form is submitted, then shows up next to the submit button
   (`floating_position`, `floating_offset`) and solves.
 - The `haptics` option of `CapType`: `false` turns off the vibrations of the widget on mobile.

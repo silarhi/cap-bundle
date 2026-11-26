@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Silarhi\CapBundle\Tests;
 
+use function array_slice;
 use function class_exists;
 use function dirname;
 use function enum_exists;
@@ -25,9 +26,11 @@ use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use Silarhi\CapBundle\SilarhiCapBundle;
+use Silarhi\CapBundle\Verifier\CapVerifierInterface;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\TwigBundle\DependencyInjection\TwigExtension;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
@@ -53,7 +56,7 @@ final class SilarhiCapBundleTest extends TestCase
 
         self::assertSame([['form_themes' => ['@SilarhiCap/form/cap_widget.html.twig']]], $builder->getExtensionConfig('twig'));
         self::assertSame(
-            [['asset_mapper' => ['paths' => [self::bundleDir() . '/../assets/dist' => '@silarhi/cap-bundle']]]],
+            [['asset_mapper' => ['paths' => [$this->bundleDir() . '/../assets/dist' => '@silarhi/cap-bundle']]]],
             $builder->getExtensionConfig('framework')
         );
     }
@@ -85,7 +88,7 @@ final class SilarhiCapBundleTest extends TestCase
     #[RequiresPhpunit('>=12.0.0')]
     public function testDoesNotPrependTheAssetMapperPathWithoutSymfonyAssetMapper(): void
     {
-        self::hideFromAutoloading(AssetMapperInterface::class);
+        $this->hideFromAutoloading(AssetMapperInterface::class);
         $builder = $this->builder(['FrameworkBundle' => ['path' => (new FrameworkBundle())->getPath()]]);
         $builder->registerExtension(new TwigExtension());
 
@@ -99,7 +102,7 @@ final class SilarhiCapBundleTest extends TestCase
     #[RequiresPhpunit('>=12.0.0')]
     public function testNamesThePackagesToInstallWithoutSymfonyHttpClient(): void
     {
-        self::hideFromAutoloading(Psr18Client::class);
+        $this->hideFromAutoloading(Psr18Client::class);
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessageMatches('/run "composer require symfony\/http-client[^"]*", or set "cap\.http_client" to your own PSR-18 client service\.$/');
@@ -111,7 +114,7 @@ final class SilarhiCapBundleTest extends TestCase
     #[RequiresPhpunit('>=12.0.0')]
     public function testUsesItsOwnPsr18ClientWithoutSymfonyHttpClient(): void
     {
-        self::hideFromAutoloading(Psr18Client::class);
+        $this->hideFromAutoloading(Psr18Client::class);
         $builder = $this->builder([]);
 
         $this->extension()->load([[
@@ -125,6 +128,32 @@ final class SilarhiCapBundleTest extends TestCase
             self::assertInstanceOf(Reference::class, $arguments[$index]);
             self::assertSame('app.psr18_client', (string) $arguments[$index], 'The client is the PSR-17 factories too by default');
         }
+    }
+
+    public function testRegistersAVerifierPerSiteKey(): void
+    {
+        $builder = $this->builder([]);
+
+        $this->extension()->load([[
+            'endpoint' => 'https://cap.example.com/key/',
+            'secret_key' => 'secret',
+            'site_keys' => ['signup' => ['endpoint' => 'https://cap.example.com/signup-key/', 'secret_key' => 'signup-secret']],
+        ]], $builder);
+
+        self::assertSame(['https://cap.example.com/signup-key/', 'signup-secret', null], array_slice($builder->getDefinition('cap.verifier.signup')->getArguments(), 0, 3));
+        self::assertSame('cap.verifier.signup', (string) $builder->getAlias(CapVerifierInterface::class . ' $signupCapVerifier'));
+        self::assertSame('cap.verifier', (string) $builder->getAlias(CapVerifierInterface::class));
+        self::assertSame(['signup' => 'https://cap.example.com/signup-key/'], $builder->getDefinition('cap.form_type')->getArgument(9));
+    }
+
+    public function testTheDefaultSiteKeyNameIsReserved(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/"default" is the name of the site key of cap.endpoint and cap.secret_key/');
+
+        $this->extension()->load([[
+            'site_keys' => ['default' => ['endpoint' => 'https://cap.example.com/key/', 'secret_key' => 'secret']],
+        ]], $this->builder([]));
     }
 
     /**
@@ -155,7 +184,7 @@ final class SilarhiCapBundleTest extends TestCase
         $extension->prepend($builder);
     }
 
-    private static function bundleDir(): string
+    private function bundleDir(): string
     {
         return dirname((string) (new ReflectionClass(SilarhiCapBundle::class))->getFileName());
     }
@@ -168,7 +197,7 @@ final class SilarhiCapBundleTest extends TestCase
      *
      * @param class-string $class
      */
-    private static function hideFromAutoloading(string $class): void
+    private function hideFromAutoloading(string $class): void
     {
         $loaders = spl_autoload_functions();
         foreach ($loaders as $loader) {

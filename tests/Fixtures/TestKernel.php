@@ -34,7 +34,7 @@ use Symfony\Component\HttpKernel\Kernel;
  * Framework + Twig + the bundle, its Cap server mocked by test.cap_http_client. Each environment is a configuration:
  * "test" the defaults (psr18.http_client over a mocked http_client), "disabled" with enabled: false, "custom" with
  * every option set (its own PSR-18 client and PSR-17 factory), "env" with the CAP_ENDPOINT and CAP_SECRET_KEY env vars
- * instead of the endpoint and the secret key.
+ * instead of the endpoint and the secret key, "site_keys" with a second site key.
  */
 final class TestKernel extends Kernel
 {
@@ -98,6 +98,12 @@ final class TestKernel extends Kernel
 
         if ('disabled' === $this->getEnvironment()) {
             $config['enabled'] = false;
+        }
+
+        if ('site_keys' === $this->getEnvironment()) {
+            $config['site_keys'] = [
+                'signup' => ['endpoint' => 'https://cap.example.com/signup-key', 'secret_key' => 'signup-secret'],
+            ];
         }
 
         if ('custom' === $this->getEnvironment()) {

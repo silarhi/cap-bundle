@@ -23,10 +23,11 @@ Stimulus or no build step at all.
 
 ```
 src/
-├── Form/CapType.php         # The field: view vars, options (mode, locale, worker_count, troubleshooting_url, i18n,
-│                            #   csp_nonce, haptics, floating_position, floating_offset)
+├── Form/CapType.php         # The field: view vars, options (mode, site_key, locale, worker_count, troubleshooting_url,
+│                            #   i18n, csp_nonce, haptics, floating_position, floating_offset)
 ├── Form/CapMode.php         # Enum of the mode option (Checkbox, Floating, Invisible); the normalizer takes its values
-├── Validator/               # Cap constraint (#[Cap]) and CapValidator (enabled: false accepts everything)
+├── Validator/               # Cap constraint (#[Cap], siteKey) and CapValidator (enabled: false accepts everything;
+│                            #   a ServiceLocator of the verifiers of cap.site_keys)
 ├── Verifier/                # CapVerifierInterface, CapVerifier (PSR-18 client + PSR-17 factories, never throws),
 │                            #   VerificationResult
 └── SilarhiCapBundle.php     # `cap:` configuration tree (extensionAlias), `cap.*` services, prepends the form theme
@@ -104,6 +105,9 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   `display` beats `hidden`); the submit handling unhides it, places it with `position: absolute` through the CSSOM
   (CSP-safe, unlike a style attribute) next to the submitter, solves, hides it 500 ms after. Never `required`: the
   browser refuses to submit a form whose required control is not focusable. Cap's `cap-floating.js` is not used.
+- **Site keys**: `endpoint` / `secret_key` / `verify_url` are the `default` site key (a reserved name),
+  `site_keys.<name>` the others: a `cap.verifier.<name>` each, aliased for autowiring (`<name>.cap_verifier`), in the
+  locator of `CapValidator`; `CapType` gets their endpoints.
 - **Log levels**: `CapVerifier` logs the token errors a visitor causes (`TOKEN_ERRORS`) as `info`, any other rejection
   of the Cap server (wrong secret, rate limit...) as `error`.
 - **Events**: `cap:solving` / `cap:solved` / `cap:failed` on the form with `{ fields }` (and `error`, from the
@@ -121,7 +125,7 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   page however many times they are inserted (Turbo re-inserts body scripts on each visit). It imports `widget.script`
   itself, after `configure()`, because the widget reads `window.CAP_CSS_NONCE` when it connects.
 - **Env vars by default**: `endpoint` and `secret_key` default to `%env(CAP_ENDPOINT)%` and `%env(CAP_SECRET_KEY)%`,
-  so a fresh `composer require` (no Flex recipe) does not break `cache:clear`. As they may be env placeholders, their
+  so a `composer require` without Flex (or without its recipe, in symfony/recipes-contrib) does not break `cache:clear`. As they may be env placeholders, their
   trailing slash is normalized at runtime (`CapVerifier::fromEndpoint()`, `CapType::buildView()`), never in
   `loadExtension()`.
 - **`exports` of `assets/package.json` keep `./package.json` and `./dist/*`**: Symfony Reprise and

@@ -20,7 +20,8 @@ use Symfony\Component\Validator\Constraint;
 /**
  * The value is a Cap token that the Cap server accepts.
  *
- * CapType adds it by default; put it on a property or a DTO yourself to protect a JSON endpoint.
+ * CapType adds it by default; put it on a property or a DTO yourself to protect a JSON endpoint. $siteKey names one of
+ * the site keys of cap.site_keys, null for the default one (cap.endpoint and cap.secret_key).
  */
 #[Attribute(Attribute::TARGET_PROPERTY | Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
 final class Cap extends Constraint
@@ -47,6 +48,7 @@ final class Cap extends Constraint
         ?string $missingMessage = null,
         ?array $groups = null,
         mixed $payload = null,
+        public ?string $siteKey = null,
     ) {
         parent::__construct(null, $groups, $payload);
 

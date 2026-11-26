@@ -41,6 +41,7 @@
 - **One form field**: `CapType` renders the widget and validates the token on submit, with the `Cap` constraint
 - **Checkbox, floating or invisible**: Cap's widget, the widget next to the submit button once the form is submitted,
   or nothing at all: the challenge is solved while the visitor fills the form
+- **Several site keys**: a light challenge for the newsletter, a harder one for signing up
 - **SPA ready**: a framework-agnostic core for any SPA, the back-forward cache and forms you submit with `fetch()`,
   plus opt-in adapters for Turbo Drive and Live Components
 - **Stimulus or not**: a controller StimulusBundle or Symfony Reprise registers for you, or a script the form renders, with no build step

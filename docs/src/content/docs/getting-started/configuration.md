@@ -14,6 +14,8 @@ cap:
     secret_key: '%env(CAP_SECRET_KEY)%'
     # The /siteverify URL, as the server reaches it. Defaults to <endpoint>siteverify
     verify_url: null
+    # Other site keys, by name: endpoint, secret_key and verify_url each. See "Several site keys"
+    site_keys: {}
     # false renders no widget and accepts every submission: for the test environment
     enabled: true
     # PSR-18 HTTP client service ID calling /siteverify. null: Symfony's psr18.http_client
@@ -47,6 +49,37 @@ cap:
     endpoint: 'https://cap.example.com/%env(CAP_SITE_KEY)%/'
     verify_url: 'http://cap:3000/%env(CAP_SITE_KEY)%/siteverify'
 ```
+
+## Several site keys
+
+Each site key of Cap has its own difficulty: a light one for a newsletter, a harder one for signing up. `endpoint` and
+`secret_key` are the default site key; name the others under `site_keys`:
+
+```yaml
+cap:
+    endpoint: '%env(CAP_ENDPOINT)%'
+    secret_key: '%env(CAP_SECRET_KEY)%'
+    site_keys:
+        signup:
+            endpoint: '%env(CAP_SIGNUP_ENDPOINT)%'
+            secret_key: '%env(CAP_SIGNUP_SECRET_KEY)%'
+            # verify_url: 'http://cap:3000/%env(CAP_SIGNUP_SITE_KEY)%/siteverify'
+```
+
+The [`site_key` option](/guides/form-type/#options) of `CapType` picks one, and verifies the token with its secret:
+
+```php
+$builder->add('captcha', CapType::class, ['site_key' => 'signup']);
+```
+
+So does the constraint, `#[Cap(siteKey: 'signup')]`, and each site key has its own verifier, autowired by name:
+
+```php
+public function __construct(private readonly CapVerifierInterface $signupCapVerifier) {}
+```
+
+or `#[Target('signup.cap_verifier')]`. `default` names the site key of `endpoint` and `secret_key`: it cannot be used
+under `site_keys`.
 
 ## The HTTP client
 
