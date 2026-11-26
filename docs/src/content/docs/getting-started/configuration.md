@@ -88,6 +88,12 @@ cap:
 A Cap server out of reach, answering a 5xx or something else than JSON rejects the submission (the bundle fails
 closed) and logs an error on the `cap` channel.
 
+## Logs
+
+The bundle logs on the `cap` channel. A token the visitor got wrong (`Token not found`, `Token expired`, a malformed
+token) is an `info`. Anything else rejects every submission, and is an `error`: a wrong `secret_key`, an endpoint
+pointing to another site key, a secret made by an older Cap release, Cap's rate limit, a Cap server out of reach.
+
 ## The widget
 
 The bundle serves the widget and its solvers from your domain; `widget.script`, `widget.wasm_url` and

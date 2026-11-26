@@ -60,7 +60,7 @@ final class CapVerifierTest extends TestCase
 
     public function testAnEmptyTokenIsNotSent(): void
     {
-        $result = $this->verifier(static fn () => self::fail('No request expected'))->verify('');
+        $result = $this->verifier(static fn (): never => self::fail('No request expected'))->verify('');
 
         self::assertFalse($result->success);
         self::assertSame(VerificationResult::ERROR_MISSING_RESPONSE, $result->error);
@@ -94,7 +94,7 @@ final class CapVerifierTest extends TestCase
     {
         $logger = new BufferingLogger();
 
-        $this->verifier(static fn () => throw new TransportException('Connection refused'), $logger)->verify('key:abc:def');
+        $this->verifier(static fn (): never => throw new TransportException('Connection refused'), $logger)->verify('key:abc:def');
 
         $logs = [];
         foreach ($logger->cleanLogs() as $log) {
@@ -102,6 +102,36 @@ final class CapVerifierTest extends TestCase
             $logs[] = [$log[0] ?? null, $log[1] ?? null];
         }
         self::assertSame([['error', 'Cap server could not be reached to verify the token.']], $logs);
+    }
+
+    /**
+     * @return iterable<string, array{MockResponse, string}>
+     */
+    public static function provideRejections(): iterable
+    {
+        yield 'token not found' => [new JsonMockResponse(['success' => false, 'error' => 'Token not found'], ['http_code' => 404]), 'info'];
+        yield 'token expired' => [new JsonMockResponse(['success' => false, 'error' => 'Token expired'], ['http_code' => 403]), 'info'];
+        yield 'malformed token' => [new JsonMockResponse(['success' => false, 'error' => 'Missing required parameters'], ['http_code' => 400]), 'info'];
+        yield 'wrong secret' => [new JsonMockResponse(['success' => false, 'error' => 'Invalid site key or secret'], ['http_code' => 403]), 'error'];
+        yield 'rate limited' => [new JsonMockResponse(['error' => 'Rate limit exceeded'], ['http_code' => 429]), 'error'];
+    }
+
+    /**
+     * A wrong token is the visitor's doing, a wrong secret rejects every submission.
+     */
+    #[DataProvider('provideRejections')]
+    public function testLogsConfigurationErrorsAsErrors(MockResponse $response, string $level): void
+    {
+        $logger = new BufferingLogger();
+
+        $this->verifier($response, $logger)->verify('key:abc:def');
+
+        $levels = [];
+        foreach ($logger->cleanLogs() as $log) {
+            self::assertIsArray($log);
+            $levels[] = $log[0] ?? null;
+        }
+        self::assertSame([$level], $levels);
     }
 
     /**

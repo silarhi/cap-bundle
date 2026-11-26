@@ -98,6 +98,8 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   solves, then `requestSubmit(submitter)`. A failed solve submits all the same (once, through `bypassedForms`) so that
   the server answers with its error. `Symbol.for('@silarhi/cap-bundle')` keeps it idempotent across copies of the
   module (public/cap.js and an application bundle).
+- **Log levels**: `CapVerifier` logs the token errors a visitor causes (`TOKEN_ERRORS`) as `info`, any other rejection
+  of the Cap server (wrong secret, rate limit...) as `error`.
 - **`solve()` returns at once while a solve is running** (the visitor clicked): `solveWidget()` waits for the widget's
   `solve` / `error` events instead of the promise.
 - **Live Components validate on every re-render** (`ComponentWithFormTrait::submitFormOnRender()` submits the whole
