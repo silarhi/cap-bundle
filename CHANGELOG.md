@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `haptics` option of `CapType`: `false` turns off the vibrations of the widget on mobile.
 - `cap.test_tokens`, for the test environment: the tokens every site key accepts without calling the Cap server, and
   `TestCapVerifier` for unit tests.
+- A Cap panel in the Symfony profiler, opt-in (`cap.profiler: true`): the tokens verified during the request, the
+  answer of the Cap server and its duration, also in the Performance panel.
 - `event.detail` on `cap:solving` and `cap:solved` (`{ fields }`) and on `cap:failed` (`{ fields, error }`, Cap's
   message), and a `cap:progress` event (`{ field, progress }`) for every mode, invisible included. Their types are
   exported: `CapSolveDetail`, `CapFailedDetail`, `CapProgressDetail`, `CapField`.

@@ -20,6 +20,8 @@ cap:
     enabled: true
     # The tokens every site key accepts without calling the Cap server: for the test environment only
     test_tokens: []
+    # Adds a Cap panel to the Symfony profiler
+    profiler: false
     # PSR-18 HTTP client service ID calling /siteverify. null: Symfony's psr18.http_client
     http_client: null
     # PSR-17 request and stream factory service IDs. null: the HTTP client (psr18.http_client is both)
@@ -128,6 +130,18 @@ closed) and logs an error on the `cap` channel.
 The bundle logs on the `cap` channel. A token the visitor got wrong (`Token not found`, `Token expired`, a malformed
 token) is an `info`. Anything else rejects every submission, and is an `error`: a wrong `secret_key`, an endpoint
 pointing to another site key, a secret made by an older Cap release, Cap's rate limit, a Cap server out of reach.
+
+## The profiler
+
+```yaml
+when@dev:
+    cap:
+        profiler: true
+```
+
+adds a Cap panel to the Symfony profiler: the tokens verified during the request with their site key, the answer of
+the Cap server and how long it took, and the site keys of the configuration. The verifications also show up in the
+Performance panel, under `cap.verify`. It needs `symfony/web-profiler-bundle`.
 
 ## The widget
 

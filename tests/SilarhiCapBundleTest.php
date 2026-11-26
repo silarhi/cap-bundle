@@ -180,6 +180,18 @@ final class SilarhiCapBundleTest extends TestCase
         $this->extension()->load([['test_tokens' => ['valid-token']]], $this->builder([], 'prod'));
     }
 
+    public function testRegistersTheDataCollectorOnlyWhenAsked(): void
+    {
+        $builder = $this->builder([]);
+        $this->extension()->load([[]], $builder);
+        self::assertFalse($builder->hasDefinition('cap.data_collector'));
+
+        $builder = $this->builder([]);
+        $this->extension()->load([['profiler' => true]], $builder);
+        self::assertSame(['id' => 'cap', 'template' => '@SilarhiCap/Collector/cap.html.twig'], $builder->getDefinition('cap.data_collector')->getTag('data_collector')[0] ?? null);
+        self::assertSame('cap.verifier', $builder->getDefinition('cap.verifier.traceable')->getDecoratedService()[0] ?? null);
+    }
+
     /**
      * @param array<string, mixed> $bundlesMetadata
      */

@@ -29,11 +29,14 @@ src/
 ├── Validator/               # Cap constraint (#[Cap], siteKey) and CapValidator (enabled: false accepts everything;
 │                            #   a ServiceLocator of the verifiers of cap.site_keys)
 ├── Verifier/                # CapVerifierInterface, CapVerifier (PSR-18 client + PSR-17 factories, never throws),
-│                            #   VerificationResult, TestCapVerifier (cap.test_tokens)
+│                            #   VerificationResult, TestCapVerifier (cap.test_tokens), TraceableCapVerifier +
+│                            #   TracedVerification (cap.profiler)
+├── DataCollector/           # CapDataCollector: the profiler panel (cap.profiler, false by default)
 └── SilarhiCapBundle.php     # `cap:` configuration tree (extensionAlias), `cap.*` services, prepends the form theme
                              #   and the AssetMapper path
 templates/form/cap_widget.html.twig  # silarhi_cap_widget block: <cap-widget>, <div hidden><cap-widget> (floating) or
                                      #   <input type="hidden"> + <script type="module">
+templates/Collector/cap.html.twig    # The profiler panel (extends @WebProfiler)
 translations/                # validators.<locale>.xlf: cap.validation.missing / cap.validation.invalid (keys, not
                              #   English sentences: the translator is needed)
 assets/
@@ -108,7 +111,7 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
 - **Site keys**: `endpoint` / `secret_key` / `verify_url` are the `default` site key (a reserved name),
   `site_keys.<name>` the others: a `cap.verifier.<name>` each, aliased for autowiring (`<name>.cap_verifier`), in the
   locator of `CapValidator`; `CapType` gets their endpoints. `test_tokens` replaces every verifier with
-  `TestCapVerifier` (refused in `prod`).
+  `TestCapVerifier` (refused in `prod`), `profiler` decorates each with `TraceableCapVerifier`.
 - **Log levels**: `CapVerifier` logs the token errors a visitor causes (`TOKEN_ERRORS`) as `info`, any other rejection
   of the Cap server (wrong secret, rate limit...) as `error`.
 - **Events**: `cap:solving` / `cap:solved` / `cap:failed` on the form with `{ fields }` (and `error`, from the

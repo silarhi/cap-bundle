@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Silarhi\CapBundle\Tests\Fixtures;
 
 use function dirname;
+use function in_array;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Override;
@@ -22,6 +23,7 @@ use Silarhi\CapBundle\SilarhiCapBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
+use Symfony\Bundle\WebProfilerBundle\WebProfilerBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -29,12 +31,14 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use Symfony\Component\HttpClient\Psr18Client;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
 /**
  * Framework + Twig + the bundle, its Cap server mocked by test.cap_http_client. Each environment is a configuration:
  * "test" the defaults (psr18.http_client over a mocked http_client), "disabled" with enabled: false, "custom" with
  * every option set (its own PSR-18 client and PSR-17 factory), "env" with the CAP_ENDPOINT and CAP_SECRET_KEY env vars
- * instead of the endpoint and the secret key, "site_keys" with a second site key, "test_tokens" with cap.test_tokens.
+ * instead of the endpoint and the secret key, "site_keys" with a second site key, "test_tokens" with cap.test_tokens,
+ * "profiler" with the second site key and the profiler.
  */
 final class TestKernel extends Kernel
 {
@@ -46,11 +50,13 @@ final class TestKernel extends Kernel
     #[Override]
     public function registerBundles(): iterable
     {
-        return [
-            new FrameworkBundle(),
-            new TwigBundle(),
-            new SilarhiCapBundle(),
-        ];
+        yield new FrameworkBundle();
+        yield new TwigBundle();
+        yield new SilarhiCapBundle();
+
+        if ('profiler' === $this->getEnvironment()) {
+            yield new WebProfilerBundle();
+        }
     }
 
     #[Override]
@@ -71,6 +77,14 @@ final class TestKernel extends Kernel
         return sys_get_temp_dir() . '/cap-bundle/log';
     }
 
+    protected function configureRoutes(RoutingConfigurator $routes): void
+    {
+        // The toolbar item of a panel links to it
+        if ('profiler' === $this->getEnvironment()) {
+            $routes->add('_profiler', '/_profiler/{token}');
+        }
+    }
+
     protected function configureContainer(ContainerConfigurator $container): void
     {
         $container->extension('framework', [
@@ -86,6 +100,7 @@ final class TestKernel extends Kernel
             'http_client' => ['mock_response_factory' => 'test.cap_server'],
             // Enabled by default once installed: only the "asset_mapper" environment uses it
             'asset_mapper' => ['enabled' => 'asset_mapper' === $this->getEnvironment()],
+            'profiler' => ['enabled' => 'profiler' === $this->getEnvironment(), 'collect' => true],
         ]);
 
         $container->extension('twig', [
@@ -100,7 +115,7 @@ final class TestKernel extends Kernel
             $config['enabled'] = false;
         }
 
-        if ('site_keys' === $this->getEnvironment()) {
+        if (in_array($this->getEnvironment(), ['site_keys', 'profiler'], true)) {
             $config['site_keys'] = [
                 'signup' => ['endpoint' => 'https://cap.example.com/signup-key', 'secret_key' => 'signup-secret'],
             ];
@@ -108,6 +123,10 @@ final class TestKernel extends Kernel
 
         if ('test_tokens' === $this->getEnvironment()) {
             $config['test_tokens'] = ['valid-token'];
+        }
+
+        if ('profiler' === $this->getEnvironment()) {
+            $config['profiler'] = true;
         }
 
         if ('custom' === $this->getEnvironment()) {
@@ -142,6 +161,9 @@ final class TestKernel extends Kernel
         }
         if ('asset_mapper' === $this->getEnvironment()) {
             $services->alias('test.asset_mapper', 'asset_mapper')->public();
+        }
+        if ('profiler' === $this->getEnvironment()) {
+            $services->alias('test.cap.data_collector', 'cap.data_collector')->public();
         }
     }
 }

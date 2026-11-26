@@ -17,6 +17,7 @@ use function is_string;
 
 use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Silarhi\CapBundle\DataCollector\CapDataCollector;
 use Silarhi\CapBundle\Form\CapMode;
 use Silarhi\CapBundle\Form\CapType;
 use Silarhi\CapBundle\Tests\Fixtures\CapServerMock;
@@ -33,6 +34,7 @@ use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
 use Symfony\Component\Validator\ConstraintViolation;
@@ -401,6 +403,45 @@ final class CapTypeTest extends KernelTestCase
         $errors = $form->get('cap')->getErrors();
         self::assertSame(null === $code ? [] : [$code], array_map(static fn (FormError $error): ?string => $error->getCause() instanceof ConstraintViolation ? $error->getCause()->getCode() : null, iterator_to_array($errors)));
         self::assertSame([], $this->capServer()->requests);
+    }
+
+    public function testTheProfilerListsTheVerifiedTokens(): void
+    {
+        self::bootKernel(['environment' => 'profiler']);
+        $this->mockCapServer(['success' => false, 'error' => 'Token expired']);
+
+        $form = $this->createForm(['site_key' => 'signup']);
+        $form->submit(['name' => 'Jane', 'cap' => 'signup-key:abc:def']);
+
+        $collector = self::getContainer()->get('test.cap.data_collector');
+        self::assertInstanceOf(CapDataCollector::class, $collector);
+        $collector->collect(new Request(), new Response());
+
+        self::assertTrue($collector->isEnabled());
+        self::assertFalse($collector->isTestMode());
+        self::assertSame(['default' => 'https://cap.example.com/site-key', 'signup' => 'https://cap.example.com/signup-key'], $collector->getEndpoints());
+        self::assertCount(1, $collector->getVerifications());
+        self::assertSame('signup', $collector->getVerifications()[0]->siteKey);
+        self::assertSame('signup-key:abc:def', $collector->getVerifications()[0]->token);
+        self::assertSame('Token expired', $collector->getVerifications()[0]->result->error);
+        self::assertSame(1, $collector->countFailures());
+
+        $twig = self::getContainer()->get('test.twig');
+        self::assertInstanceOf(Environment::class, $twig);
+        $template = $twig->load('@SilarhiCap/Collector/cap.html.twig');
+        $context = ['collector' => $collector, 'profiler_url' => '/_profiler/abc', 'token' => 'abc', 'name' => 'cap', 'profiler_markup_version' => 3];
+
+        $panel = new Crawler($template->renderBlock('panel', $context));
+        self::assertStringContainsString('signup-key:abc:def', $panel->filter('table')->first()->text());
+        self::assertStringContainsString('Rejected Token expired', $panel->filter('table')->first()->text());
+        self::assertStringContainsString('1', $template->renderBlock('menu', $context));
+        self::assertStringContainsString('sf-toolbar-status-red', $template->renderBlock('toolbar', $context));
+
+        $resetter = self::getContainer()->get('services_resetter');
+        self::assertInstanceOf(ResetInterface::class, $resetter);
+        $resetter->reset();
+        $collector->collect(new Request(), new Response());
+        self::assertSame([], $collector->getVerifications(), 'Long-running workers forget the tokens of the previous request');
     }
 
     /**

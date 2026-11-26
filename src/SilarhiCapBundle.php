@@ -22,11 +22,13 @@ use function is_string;
 
 use LogicException;
 use Override;
+use Silarhi\CapBundle\DataCollector\CapDataCollector;
 use Silarhi\CapBundle\Form\CapType;
 use Silarhi\CapBundle\Validator\CapValidator;
 use Silarhi\CapBundle\Verifier\CapVerifier;
 use Silarhi\CapBundle\Verifier\CapVerifierInterface;
 use Silarhi\CapBundle\Verifier\TestCapVerifier;
+use Silarhi\CapBundle\Verifier\TraceableCapVerifier;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -85,6 +87,10 @@ final class SilarhiCapBundle extends AbstractBundle
                 ->arrayNode('test_tokens')
                     ->info('For the test environment: the tokens every site key accepts, without calling the Cap server. It rejects the others like an expired token.')
                     ->scalarPrototype()->cannotBeEmpty()->end()
+                ->end()
+                ->booleanNode('profiler')
+                    ->defaultFalse()
+                    ->info('Adds a Cap panel to the Symfony profiler: the tokens verified during the request and the answer of the Cap server.')
                 ->end()
                 ->scalarNode('http_client')
                     ->defaultNull()
@@ -159,6 +165,7 @@ final class SilarhiCapBundle extends AbstractBundle
          *     site_keys: array<string, array{endpoint: string, secret_key: string, verify_url: string|null}>,
          *     enabled: bool,
          *     test_tokens: list<string>,
+         *     profiler: bool,
          *     http_client: string|null,
          *     request_factory: string|null,
          *     stream_factory: string|null,
@@ -185,6 +192,7 @@ final class SilarhiCapBundle extends AbstractBundle
         ]] + $config['site_keys'];
 
         $verifiers = [];
+        $traceableVerifiers = [];
         foreach ($siteKeys as $name => $siteKey) {
             $id = 'default' === $name ? 'cap.verifier' : 'cap.verifier.' . $name;
 
@@ -206,6 +214,14 @@ final class SilarhiCapBundle extends AbstractBundle
                     ->tag('monolog.logger', ['channel' => 'cap']);
             }
 
+            if ($config['profiler']) {
+                $services->set($id . '.traceable', TraceableCapVerifier::class)
+                    ->decorate($id)
+                    ->args([service('.inner'), $name, service('debug.stopwatch')->ignoreOnInvalid()])
+                    ->tag('kernel.reset', ['method' => 'reset']);
+                $traceableVerifiers[] = service($id . '.traceable');
+            }
+
             if ('default' !== $name) {
                 // CapVerifierInterface $signupCapVerifier, or #[Target('signup.cap_verifier')]
                 $builder->registerAliasForArgument($id, CapVerifierInterface::class, $name . '.cap_verifier');
@@ -218,6 +234,17 @@ final class SilarhiCapBundle extends AbstractBundle
             ->args([service('cap.verifier'), $config['enabled'], service_locator($verifiers)])
             ->tag('validator.constraint_validator')
             ->tag('kernel.reset', ['method' => 'reset']);
+
+        if ($config['profiler']) {
+            $services->set('cap.data_collector', CapDataCollector::class)
+                ->args([
+                    $traceableVerifiers,
+                    $config['enabled'],
+                    [] !== $config['test_tokens'],
+                    array_map(static fn (array $siteKey): string => $siteKey['endpoint'], $siteKeys),
+                ])
+                ->tag('data_collector', ['id' => CapDataCollector::NAME, 'template' => '@SilarhiCap/Collector/cap.html.twig']);
+        }
 
         $services->set('cap.form_type', CapType::class)
             ->args([
