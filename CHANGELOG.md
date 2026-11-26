@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CapMode::Floating`: the widget stays hidden until the form is submitted, then shows up next to the submit button
   (`floating_position`, `floating_offset`) and solves.
 - The `haptics` option of `CapType`: `false` turns off the vibrations of the widget on mobile.
+- `cap.test_tokens`, for the test environment: the tokens every site key accepts without calling the Cap server, and
+  `TestCapVerifier` for unit tests.
 - `event.detail` on `cap:solving` and `cap:solved` (`{ fields }`) and on `cap:failed` (`{ fields, error }`, Cap's
   message), and a `cap:progress` event (`{ field, progress }`) for every mode, invisible included. Their types are
   exported: `CapSolveDetail`, `CapFailedDetail`, `CapProgressDetail`, `CapField`.

@@ -28,12 +28,14 @@ use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
+use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Service\ResetInterface;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
@@ -376,6 +378,29 @@ final class CapTypeTest extends KernelTestCase
         $this->expectExceptionMessage('The Cap site key "newsletter" is not configured: add it to "cap.site_keys".');
 
         $this->createForm(['site_key' => 'newsletter']);
+    }
+
+    /**
+     * @return iterable<string, array{string|null, string|null}>
+     */
+    public static function provideTestTokens(): iterable
+    {
+        yield 'a test token' => ['valid-token', null];
+        yield 'another token' => ['site-key:abc:def', Cap::INVALID_ERROR];
+        yield 'no token' => [null, Cap::MISSING_ERROR];
+    }
+
+    #[DataProvider('provideTestTokens')]
+    public function testAcceptsTheTestTokensOnlyWithoutCallingTheServer(?string $token, ?string $code): void
+    {
+        self::bootKernel(['environment' => 'test_tokens']);
+
+        $form = $this->createForm();
+        $form->submit(['name' => 'Jane', 'cap' => $token]);
+
+        $errors = $form->get('cap')->getErrors();
+        self::assertSame(null === $code ? [] : [$code], array_map(static fn (FormError $error): ?string => $error->getCause() instanceof ConstraintViolation ? $error->getCause()->getCode() : null, iterator_to_array($errors)));
+        self::assertSame([], $this->capServer()->requests);
     }
 
     /**

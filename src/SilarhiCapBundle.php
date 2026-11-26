@@ -26,6 +26,7 @@ use Silarhi\CapBundle\Form\CapType;
 use Silarhi\CapBundle\Validator\CapValidator;
 use Silarhi\CapBundle\Verifier\CapVerifier;
 use Silarhi\CapBundle\Verifier\CapVerifierInterface;
+use Silarhi\CapBundle\Verifier\TestCapVerifier;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -80,6 +81,10 @@ final class SilarhiCapBundle extends AbstractBundle
                 ->booleanNode('enabled')
                     ->defaultTrue()
                     ->info('false renders no widget and accepts every submission: for the test environment.')
+                ->end()
+                ->arrayNode('test_tokens')
+                    ->info('For the test environment: the tokens every site key accepts, without calling the Cap server. It rejects the others like an expired token.')
+                    ->scalarPrototype()->cannotBeEmpty()->end()
                 ->end()
                 ->scalarNode('http_client')
                     ->defaultNull()
@@ -153,6 +158,7 @@ final class SilarhiCapBundle extends AbstractBundle
          *     verify_url: string|null,
          *     site_keys: array<string, array{endpoint: string, secret_key: string, verify_url: string|null}>,
          *     enabled: bool,
+         *     test_tokens: list<string>,
          *     http_client: string|null,
          *     request_factory: string|null,
          *     stream_factory: string|null,
@@ -168,6 +174,10 @@ final class SilarhiCapBundle extends AbstractBundle
         }
         $httpClient = $config['http_client'] ?? 'psr18.http_client';
 
+        if ([] !== $config['test_tokens'] && 'prod' === $builder->getParameter('kernel.environment')) {
+            throw new LogicException('"cap.test_tokens" makes the Cap challenge useless: set it in the test environment only (when@test).');
+        }
+
         $siteKeys = ['default' => [
             'endpoint' => $config['endpoint'],
             'secret_key' => $config['secret_key'],
@@ -178,19 +188,23 @@ final class SilarhiCapBundle extends AbstractBundle
         foreach ($siteKeys as $name => $siteKey) {
             $id = 'default' === $name ? 'cap.verifier' : 'cap.verifier.' . $name;
 
-            // The endpoint is often an env var: its trailing slash can only be normalized at runtime
-            $services->set($id, CapVerifier::class)
-                ->factory([CapVerifier::class, 'fromEndpoint'])
-                ->args([
-                    $siteKey['endpoint'],
-                    $siteKey['secret_key'],
-                    $siteKey['verify_url'],
-                    service($httpClient),
-                    service($config['request_factory'] ?? $httpClient),
-                    service($config['stream_factory'] ?? $httpClient),
-                    service('logger')->ignoreOnInvalid(),
-                ])
-                ->tag('monolog.logger', ['channel' => 'cap']);
+            if ([] !== $config['test_tokens']) {
+                $services->set($id, TestCapVerifier::class)->args([$config['test_tokens']]);
+            } else {
+                // The endpoint is often an env var: its trailing slash can only be normalized at runtime
+                $services->set($id, CapVerifier::class)
+                    ->factory([CapVerifier::class, 'fromEndpoint'])
+                    ->args([
+                        $siteKey['endpoint'],
+                        $siteKey['secret_key'],
+                        $siteKey['verify_url'],
+                        service($httpClient),
+                        service($config['request_factory'] ?? $httpClient),
+                        service($config['stream_factory'] ?? $httpClient),
+                        service('logger')->ignoreOnInvalid(),
+                    ])
+                    ->tag('monolog.logger', ['channel' => 'cap']);
+            }
 
             if ('default' !== $name) {
                 // CapVerifierInterface $signupCapVerifier, or #[Target('signup.cap_verifier')]

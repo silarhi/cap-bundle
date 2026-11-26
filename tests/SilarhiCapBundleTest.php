@@ -27,6 +27,7 @@ use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use Silarhi\CapBundle\SilarhiCapBundle;
 use Silarhi\CapBundle\Verifier\CapVerifierInterface;
+use Silarhi\CapBundle\Verifier\TestCapVerifier;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\TwigBundle\DependencyInjection\TwigExtension;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
@@ -156,15 +157,38 @@ final class SilarhiCapBundleTest extends TestCase
         ]], $this->builder([]));
     }
 
+    public function testReplacesTheVerifiersWithTestTokens(): void
+    {
+        $builder = $this->builder([]);
+
+        $this->extension()->load([[
+            'test_tokens' => ['valid-token'],
+            'site_keys' => ['signup' => ['endpoint' => 'https://cap.example.com/signup-key/', 'secret_key' => 'signup-secret']],
+        ]], $builder);
+
+        foreach (['cap.verifier', 'cap.verifier.signup'] as $id) {
+            self::assertSame(TestCapVerifier::class, $builder->getDefinition($id)->getClass());
+            self::assertSame([['valid-token']], $builder->getDefinition($id)->getArguments());
+        }
+    }
+
+    public function testRefusesTestTokensInProduction(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('"cap.test_tokens" makes the Cap challenge useless: set it in the test environment only (when@test).');
+
+        $this->extension()->load([['test_tokens' => ['valid-token']]], $this->builder([], 'prod'));
+    }
+
     /**
      * @param array<string, mixed> $bundlesMetadata
      */
-    private function builder(array $bundlesMetadata): ContainerBuilder
+    private function builder(array $bundlesMetadata, string $environment = 'test'): ContainerBuilder
     {
         // Symfony 6.4 and 7.x load the extension's configuration with the kernel's environment and build directory
         return new ContainerBuilder(new ParameterBag([
             'kernel.bundles_metadata' => $bundlesMetadata,
-            'kernel.environment' => 'test',
+            'kernel.environment' => $environment,
             'kernel.build_dir' => sys_get_temp_dir(),
         ]));
     }

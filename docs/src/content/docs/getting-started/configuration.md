@@ -18,6 +18,8 @@ cap:
     site_keys: {}
     # false renders no widget and accepts every submission: for the test environment
     enabled: true
+    # The tokens every site key accepts without calling the Cap server: for the test environment only
+    test_tokens: []
     # PSR-18 HTTP client service ID calling /siteverify. null: Symfony's psr18.http_client
     http_client: null
     # PSR-17 request and stream factory service IDs. null: the HTTP client (psr18.http_client is both)

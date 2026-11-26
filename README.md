@@ -48,6 +48,7 @@
 - **Self-hosted end to end**: your Cap server, and the widget script and its WebAssembly solver from your domain if you like
 - **Fails closed**: a Cap server out of reach rejects the submission, and the error stays on the field
 - **Any payload**: the `#[Cap]` constraint and the `CapVerifierInterface` service protect JSON endpoints too
+- **Testable**: test tokens that skip the Cap server
 
 ## Requirements
 

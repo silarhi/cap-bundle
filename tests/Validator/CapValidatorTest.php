@@ -17,6 +17,7 @@ use Override;
 use Silarhi\CapBundle\Validator\Cap;
 use Silarhi\CapBundle\Validator\CapValidator;
 use Silarhi\CapBundle\Verifier\CapVerifierInterface;
+use Silarhi\CapBundle\Verifier\TestCapVerifier;
 use Silarhi\CapBundle\Verifier\VerificationResult;
 use stdClass;
 use Symfony\Component\DependencyInjection\ServiceLocator;
@@ -104,13 +105,8 @@ final class CapValidatorTest extends ConstraintValidatorTestCase
 
     public function testVerifiesWithTheSiteKeyOfTheConstraint(): void
     {
-        $signup = new class implements CapVerifierInterface {
-            public function verify(string $token): VerificationResult
-            {
-                return VerificationResult::success();
-            }
-        };
-        $this->validator = new CapValidator($this->verifier(), true, new ServiceLocator(['signup' => static fn (): CapVerifierInterface => $signup]));
+        $signup = new TestCapVerifier(['signup-token']);
+        $this->validator = new CapValidator($this->verifier(), true, new ServiceLocator(['signup' => static fn (): TestCapVerifier => $signup]));
         $this->validator->initialize($this->context);
 
         $this->validator->validate('signup-token', new Cap(siteKey: 'signup'));
