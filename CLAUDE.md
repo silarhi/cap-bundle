@@ -23,14 +23,20 @@ Stimulus or no build step at all.
 
 ```
 src/
-├── Form/CapType.php         # The field: view vars, options (mode, locale, worker_count, troubleshooting_url, i18n, csp_nonce)
-├── Form/CapMode.php         # Enum of the mode option (Checkbox, Invisible); CapType's normalizer also takes its values
-├── Validator/               # Cap constraint (#[Cap]) and CapValidator (enabled: false accepts everything)
+├── Form/CapType.php         # The field: view vars, options (mode, site_key, locale, worker_count, troubleshooting_url,
+│                            #   i18n, csp_nonce, haptics, floating_position, floating_offset)
+├── Form/CapMode.php         # Enum of the mode option (Checkbox, Floating, Invisible); the normalizer takes its values
+├── Validator/               # Cap constraint (#[Cap], siteKey) and CapValidator (enabled: false accepts everything;
+│                            #   a ServiceLocator of the verifiers of cap.site_keys)
 ├── Verifier/                # CapVerifierInterface, CapVerifier (PSR-18 client + PSR-17 factories, never throws),
-│                            #   VerificationResult
+│                            #   VerificationResult, TestCapVerifier (cap.test_tokens), TraceableCapVerifier +
+│                            #   TracedVerification (cap.profiler)
+├── DataCollector/           # CapDataCollector: the profiler panel (cap.profiler, false by default)
 └── SilarhiCapBundle.php     # `cap:` configuration tree (extensionAlias), `cap.*` services, prepends the form theme
                              #   and the AssetMapper path
-templates/form/cap_widget.html.twig  # silarhi_cap_widget block: <cap-widget> or <input type="hidden"> + <script type="module">
+templates/form/cap_widget.html.twig  # silarhi_cap_widget block: <cap-widget>, <div hidden><cap-widget> (floating) or
+                                     #   <input type="hidden"> + <script type="module">
+templates/Collector/cap.html.twig    # The profiler panel (extends @WebProfiler)
 translations/                # validators.<locale>.xlf: cap.validation.missing / cap.validation.invalid (keys, not
                              #   English sentences: the translator is needed)
 assets/
@@ -98,6 +104,19 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   solves, then `requestSubmit(submitter)`. A failed solve submits all the same (once, through `bypassedForms`) so that
   the server answers with its error. `Symbol.for('@silarhi/cap-bundle')` keeps it idempotent across copies of the
   module (public/cap.js and an application bundle).
+- **Floating mode is a hidden wrapper.** `<div data-silarhi-cap-floating hidden>` around the widget (its own
+  `display` beats `hidden`); the submit handling unhides it, places it with `position: absolute` through the CSSOM
+  (CSP-safe, unlike a style attribute) next to the submitter, solves, hides it 500 ms after. Never `required`: the
+  browser refuses to submit a form whose required control is not focusable. Cap's `cap-floating.js` is not used.
+- **Site keys**: `endpoint` / `secret_key` / `verify_url` are the `default` site key (a reserved name),
+  `site_keys.<name>` the others: a `cap.verifier.<name>` each, aliased for autowiring (`<name>.cap_verifier`), in the
+  locator of `CapValidator`; `CapType` gets their endpoints. `test_tokens` replaces every verifier with
+  `TestCapVerifier` (refused in `prod`), `profiler` decorates each with `TraceableCapVerifier`.
+- **Log levels**: `CapVerifier` logs the token errors a visitor causes (`TOKEN_ERRORS`) as `info`, any other rejection
+  of the Cap server (wrong secret, rate limit...) as `error`.
+- **Events**: `cap:solving` / `cap:solved` / `cap:failed` on the form with `{ fields }` (and `error`, from the
+  widget's `error` events), `cap:progress` forwarded from the widget's `progress` (a capture listener on the document
+  for widgets, the `Cap` instance for invisible inputs, whose widget lives on `<html>`).
 - **`solve()` returns at once while a solve is running** (the visitor clicked): `solveWidget()` waits for the widget's
   `solve` / `error` events instead of the promise.
 - **Live Components validate on every re-render** (`ComponentWithFormTrait::submitFormOnRender()` submits the whole
@@ -110,7 +129,7 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   page however many times they are inserted (Turbo re-inserts body scripts on each visit). It imports `widget.script`
   itself, after `configure()`, because the widget reads `window.CAP_CSS_NONCE` when it connects.
 - **Env vars by default**: `endpoint` and `secret_key` default to `%env(CAP_ENDPOINT)%` and `%env(CAP_SECRET_KEY)%`,
-  so a fresh `composer require` (no Flex recipe) does not break `cache:clear`. As they may be env placeholders, their
+  so a `composer require` without Flex (or without its recipe, in symfony/recipes-contrib) does not break `cache:clear`. As they may be env placeholders, their
   trailing slash is normalized at runtime (`CapVerifier::fromEndpoint()`, `CapType::buildView()`), never in
   `loadExtension()`.
 - **`exports` of `assets/package.json` keep `./package.json` and `./dist/*`**: Symfony Reprise and

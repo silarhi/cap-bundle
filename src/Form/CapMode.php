@@ -21,6 +21,9 @@ enum CapMode: string
     /** The Cap widget: a checkbox the visitor ticks, solved in the background as soon as they interact with the page. */
     case Checkbox = 'checkbox';
 
+    /** The Cap widget, hidden until the visitor submits the form: it shows up next to the submit button and solves. */
+    case Floating = 'floating';
+
     /** Nothing visible: the challenge is solved when the visitor starts filling the form, or when they submit it. */
     case Invisible = 'invisible';
 }

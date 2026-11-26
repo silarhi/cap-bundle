@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - Unreleased
+
+### Added
+
+- Several site keys: `cap.site_keys` names the others (`endpoint`, `secret_key`, `verify_url` each), the `site_key`
+  option of `CapType` and `#[Cap(siteKey: '...')]` pick one. Each has its verifier, autowired as
+  `CapVerifierInterface $<name>CapVerifier`.
+- `CapMode::Floating`: the widget stays hidden until the form is submitted, then shows up next to the submit button
+  (`floating_position`, `floating_offset`) and solves.
+- The `haptics` option of `CapType`: `false` turns off the vibrations of the widget on mobile.
+- `cap.test_tokens`, for the test environment: the tokens every site key accepts without calling the Cap server, and
+  `TestCapVerifier` for unit tests.
+- A Cap panel in the Symfony profiler, opt-in (`cap.profiler: true`): the tokens verified during the request, the
+  answer of the Cap server and its duration, also in the Performance panel.
+- `event.detail` on `cap:solving` and `cap:solved` (`{ fields }`) and on `cap:failed` (`{ fields, error }`, Cap's
+  message), and a `cap:progress` event (`{ field, progress }`) for every mode, invisible included. Their types are
+  exported: `CapSolveDetail`, `CapFailedDetail`, `CapProgressDetail`, `CapField`.
+
+### Changed
+
+- A configuration error (a wrong secret key, an endpoint of another site key, an old secret, Cap's rate limit) is
+  logged as an `error`, no longer as an `info` among the tokens visitors got wrong.
+
 ## [0.4.0] - 2026-10-29
 
 ### Changed
@@ -63,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validation messages as translation keys of the `validators` domain (`cap.validation.missing`,
   `cap.validation.invalid`), translated in English, French, German, Spanish, Italian, Dutch and Portuguese.
 
+[0.5.0]: https://github.com/silarhi/cap-bundle/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/silarhi/cap-bundle/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/silarhi/cap-bundle/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/silarhi/cap-bundle/releases/tag/v0.2.0

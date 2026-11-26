@@ -12,13 +12,40 @@ export const SELECTOR = '[data-silarhi-cap]'
 /** How long the submit of an invisible challenge waits for the cap-widget script before giving up. */
 const WIDGET_TIMEOUT = 10_000
 
+/** The wrapper that hides a floating widget until a submit shows it. */
+const FLOATING_SELECTOR = '[data-silarhi-cap-floating]'
+
+/** How long a solved floating widget shows its checkmark before the form is submitted. */
+const FLOATING_HIDE_DELAY = 500
+
 export type CapWidgetElement = CapWidget
+
+/** A challenge CapType renders: a `<cap-widget>`, or the hidden input of an invisible one. */
+export type CapField = CapWidgetElement | HTMLInputElement
+
+/** The detail of `cap:solving` and `cap:solved`, dispatched on the form: the challenges it solves. */
+export interface CapSolveDetail {
+    fields: CapField[]
+}
+
+/** The detail of `cap:failed`: the error of the first challenge that failed, as Cap words it, null without one. */
+export interface CapFailedDetail extends CapSolveDetail {
+    error: string | null
+}
+
+/** The detail of `cap:progress`, dispatched on the form of the challenge (on the challenge outside a form). */
+export interface CapProgressDetail {
+    field: CapField
+    /** From 0 to 100. */
+    progress: number
+}
 
 /** Shared by every copy of this module on the page: the bundle's script and an application bundle may both load it. */
 const INSTALLED = Symbol.for('@silarhi/cap-bundle')
 
 const solving = new WeakMap<Element, Promise<boolean>>()
 const invisibleCaps = new Map<HTMLInputElement, Cap>()
+const errors = new WeakMap<Element, string>()
 const busyForms = new WeakSet<HTMLFormElement>()
 const bypassedForms = new WeakSet<HTMLFormElement>()
 
@@ -35,6 +62,8 @@ export function install(): void {
     // Capture phase: before frameworks and the application's own submit listeners see an unsolved form
     document.addEventListener('submit', onSubmit, true)
     document.addEventListener('focusin', onFocusIn)
+    // Capture phase: the progress events of media elements do not bubble, those of a widget do not need to
+    document.addEventListener('progress', onProgress, true)
     // A page the back-forward cache restores holds the tokens of the forms it showed
     window.addEventListener('pageshow', (event) => {
         if (event.persisted) {
@@ -80,7 +109,7 @@ export function loadWidget(element: HTMLElement): void {
  * Resolves false when one failed: the widget shows why, an invisible challenge stays empty.
  */
 export async function solve(target: Element): Promise<boolean> {
-    const results = await Promise.all(fieldsOf(target).map(solveField))
+    const results = await Promise.all(fieldsOf(target).map((field) => solveField(field)))
 
     return results.every(Boolean)
 }
@@ -97,6 +126,9 @@ export function reset(target: Element | Document): void {
         } else if (hasToken(field)) {
             field.reset()
         }
+        if (isFloating(field)) {
+            hideFloating(field)
+        }
     }
 }
 
@@ -111,34 +143,107 @@ export function tokenOf(field: Element): string {
     return (field as Partial<CapWidgetElement>).token ?? ''
 }
 
-function fieldsOf(target: Element | Document): Array<CapWidgetElement | HTMLInputElement> {
+function fieldsOf(target: Element | Document): CapField[] {
     if (target instanceof Element && target.matches(SELECTOR)) {
-        return [target as CapWidgetElement | HTMLInputElement]
+        return [target as CapField]
     }
 
-    return Array.from(target.querySelectorAll<CapWidgetElement | HTMLInputElement>(SELECTOR))
+    return Array.from(target.querySelectorAll<CapField>(SELECTOR))
 }
 
 function isInvisible(field: Element): field is HTMLInputElement {
     return field instanceof HTMLInputElement
 }
 
-function hasToken(field: CapWidgetElement | HTMLInputElement): boolean {
+function isFloating(field: CapField): field is CapWidgetElement {
+    return !isInvisible(field) && field.dataset.silarhiCap === 'floating'
+}
+
+function hasToken(field: CapField): boolean {
     return isInvisible(field) ? field.value !== '' : Boolean(field.token)
 }
 
-function solveField(field: CapWidgetElement | HTMLInputElement): Promise<boolean> {
+/**
+ * @param anchor the button a floating widget shows up next to: the submitter, or the first submit button of the form
+ */
+function solveField(field: CapField, anchor: Element | null = null): Promise<boolean> {
     if (hasToken(field)) {
         return Promise.resolve(true)
     }
 
     let pending = solving.get(field)
     if (!pending) {
-        pending = (isInvisible(field) ? solveInvisible(field) : solveWidget(field)).finally(() => solving.delete(field))
+        errors.delete(field)
+        const solved = isInvisible(field)
+            ? solveInvisible(field)
+            : isFloating(field)
+              ? solveFloating(field, anchor)
+              : solveWidget(field)
+        pending = solved.finally(() => solving.delete(field))
         solving.set(field, pending)
     }
 
     return pending
+}
+
+async function solveFloating(widget: CapWidgetElement, anchor: Element | null): Promise<boolean> {
+    showFloating(widget, anchor ?? widget.closest('form')?.querySelector('[type="submit"]') ?? null)
+
+    const solved = await solveWidget(widget)
+    // A solved widget shows its checkmark, then makes way. A failed one stays, with its error.
+    if (solved) {
+        await new Promise((resolve) => setTimeout(resolve, FLOATING_HIDE_DELAY))
+        hideFloating(widget)
+    }
+
+    return solved
+}
+
+function showFloating(widget: CapWidgetElement, anchor: Element | null): void {
+    const wrapper = widget.closest<HTMLElement>(FLOATING_SELECTOR)
+    if (!wrapper) {
+        return
+    }
+
+    wrapper.hidden = false
+    if (!anchor) {
+        return
+    }
+
+    // Set through the CSSOM, not a style attribute: a strict Content-Security-Policy allows it
+    wrapper.style.position = 'absolute'
+    wrapper.style.zIndex = '99999'
+
+    // `position: absolute` places the wrapper in its containing block, getBoundingClientRect() in the viewport
+    const parent = wrapper.offsetParent
+    const container =
+        parent && (parent !== document.body || getComputedStyle(parent).position !== 'static')
+            ? parent
+            : document.documentElement
+    const containerRect = container.getBoundingClientRect()
+    const anchorRect = anchor.getBoundingClientRect()
+    const offset = Number.parseInt(widget.dataset.silarhiCapOffset ?? '', 10) || 8
+
+    const left = Math.max(
+        2,
+        Math.min(
+            anchorRect.left + (anchorRect.width - wrapper.offsetWidth) / 2,
+            window.innerWidth - wrapper.offsetWidth
+        )
+    )
+    const top =
+        widget.dataset.silarhiCapPosition === 'bottom'
+            ? Math.min(anchorRect.bottom + offset, window.innerHeight - wrapper.offsetHeight)
+            : Math.max(0, anchorRect.top - wrapper.offsetHeight - offset)
+    wrapper.style.left = `${left - containerRect.left}px`
+    wrapper.style.top = `${top - containerRect.top}px`
+}
+
+function hideFloating(widget: CapWidgetElement): void {
+    const wrapper = widget.closest<HTMLElement>(FLOATING_SELECTOR)
+    if (wrapper) {
+        wrapper.hidden = true
+    }
 }
 
 async function solveWidget(widget: CapWidgetElement): Promise<boolean> {
@@ -156,7 +261,10 @@ async function solveWidget(widget: CapWidgetElement): Promise<boolean> {
             resolve(solved)
         }
         const onSolve = () => settle(true)
-        const onError = () => settle(false)
+        const onError = (event: Event) => {
+            recordError(widget, event)
+            settle(false)
+        }
         widget.addEventListener('solve', onSolve)
         widget.addEventListener('error', onError)
 
@@ -183,8 +291,11 @@ async function solveInvisible(input: HTMLInputElement): Promise<boolean> {
 
             return true
         }
-    } catch {
-        // The widget dispatched an "error" event already
+    } catch (error) {
+        // The widget dispatched an "error" event already, unless solve() itself failed
+        if (!errors.has(input) && error instanceof Error) {
+            errors.set(input, error.message)
+        }
     }
 
     return false
@@ -212,6 +323,9 @@ function createInvisibleCap(CapClass: typeof Cap, input: HTMLInputElement): Cap 
     cap.addEventListener('reset', () => {
         input.value = ''
     })
+    cap.addEventListener('error', (event) => recordError(input, event))
+    // Its hidden widget lives on <html>, out of the form: onProgress() cannot tell which input it solves
+    cap.addEventListener('progress', (event) => dispatchProgress(input, event))
     invisibleCaps.set(input, cap)
 
     return cap
@@ -250,15 +364,23 @@ function onSubmit(event: Event): void {
     }
     busyForms.add(form)
     form.setAttribute('aria-busy', 'true')
-    form.dispatchEvent(new CustomEvent('cap:solving', { bubbles: true }))
+    form.dispatchEvent(new CustomEvent<CapSolveDetail>('cap:solving', { bubbles: true, detail: { fields: pending } }))
 
     const submitter = (event as SubmitEvent).submitter
-    void Promise.all(pending.map(solveField)).then((results) => {
+    void Promise.all(pending.map((field) => solveField(field, submitter))).then((results) => {
         busyForms.delete(form)
         form.removeAttribute('aria-busy')
 
-        const solved = results.every(Boolean)
-        form.dispatchEvent(new CustomEvent(solved ? 'cap:solved' : 'cap:failed', { bubbles: true }))
+        if (results.every(Boolean)) {
+            form.dispatchEvent(
+                new CustomEvent<CapSolveDetail>('cap:solved', { bubbles: true, detail: { fields: pending } })
+            )
+        } else {
+            const error = pending.map((field) => errors.get(field)).find((message) => message !== undefined) ?? null
+            form.dispatchEvent(
+                new CustomEvent<CapFailedDetail>('cap:failed', { bubbles: true, detail: { fields: pending, error } })
+            )
+        }
         if (!form.isConnected) {
             return
         }
@@ -288,5 +410,32 @@ function onFocusIn(event: FocusEvent): void {
         if (isInvisible(field) && !hasToken(field)) {
             void solveField(field)
         }
+    }
+}
+
+function onProgress(event: Event): void {
+    const field = event.target
+    if (field instanceof Element && !isInvisible(field) && field.matches(SELECTOR)) {
+        dispatchProgress(field as CapWidgetElement, event)
+    }
+}
+
+function dispatchProgress(field: CapField, event: Event): void {
+    const progress = (event as CustomEvent<{ progress?: unknown } | null>).detail?.progress
+    if (typeof progress !== 'number') {
+        return
+    }
+
+    const target = field.closest('form') ?? field
+    target.dispatchEvent(
+        new CustomEvent<CapProgressDetail>('cap:progress', { bubbles: true, detail: { field, progress } })
+    )
+}
+
+/** Keeps the message of an "error" event of Cap, for the detail of cap:failed. */
+function recordError(field: CapField, event: Event): void {
+    const message = (event as CustomEvent<{ message?: unknown } | null>).detail?.message
+    if (typeof message === 'string') {
+        errors.set(field, message)
     }
 }

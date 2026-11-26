@@ -36,7 +36,7 @@ use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Twig\Environment;
 
 /**
- * The application of the end-to-end tests (assets/e2e): a checkbox and an invisible challenge, redeemed by a real Cap
+ * The application of the end-to-end tests (assets/e2e): a form per CapMode, redeemed by a real Cap
  * server (CAP_ENDPOINT, CAP_SECRET_KEY) through the default psr18.http_client.
  */
 final class E2eKernel extends Kernel

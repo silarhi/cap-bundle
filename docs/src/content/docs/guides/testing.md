@@ -19,9 +19,40 @@ when@test:
 `CapType` renders nothing and the `Cap` constraint accepts every value, so `$client->submitForm()` works without a
 token, and no request reaches a Cap server.
 
-## Testing the protection itself
+## Test tokens
 
-Keep the bundle enabled in a dedicated environment, and answer for the Cap server with the
+To test the protection itself, give the test environment the tokens it accepts:
+
+```yaml
+# config/packages/cap.yaml
+when@test:
+    cap:
+        test_tokens: ['valid-cap-token']
+```
+
+Every site key accepts them, as often as they are sent, and rejects any other token like Cap rejects an unknown one
+(`Token not found`), without calling the Cap server. The form still renders the widget.
+
+```php
+$form = static::getContainer()->get('form.factory')->create(ContactType::class, null, ['csrf_protection' => false]);
+$form->submit(['email' => 'jane@example.com', 'captcha' => 'valid-cap-token']);
+self::assertTrue($form->isValid());
+
+$form = static::getContainer()->get('form.factory')->create(ContactType::class, null, ['csrf_protection' => false]);
+$form->submit(['email' => 'jane@example.com', 'captcha' => 'forged']);
+self::assertFalse($form->isValid());
+```
+
+In a `WebTestCase`, `$client->submitForm()` fills the hidden input of an invisible challenge. A checkbox or floating
+widget creates its input in the browser only: the page has none for `submitForm()` to fill. The bundle refuses
+`test_tokens` in the `prod` environment.
+
+`TestCapVerifier` is the verifier behind them: use it in a unit test of a service that takes a
+`CapVerifierInterface`, `new TestCapVerifier(['valid-cap-token'])`.
+
+## Mocking the Cap server
+
+To test the answers of the Cap server, keep the bundle enabled in a dedicated environment, and answer for it with the
 [`mock_response_factory`](https://symfony.com/doc/current/http_client.html#testing) of Symfony's HTTP client, which
 `psr18.http_client` wraps:
 

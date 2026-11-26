@@ -60,8 +60,10 @@
         "symfony/error-handler": "^6.4 || ^7.0 || ^8.0",
         "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
         "symfony/http-client": "^6.4 || ^7.0 || ^8.0",
+        "symfony/stopwatch": "^6.4 || ^7.0 || ^8.0",
         "symfony/translation": "^6.4 || ^7.0 || ^8.0",
         "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
+        "symfony/web-profiler-bundle": "^6.4 || ^7.0 || ^8.0",
         "twig/twig": "^3.0"
     },
     "suggest": {

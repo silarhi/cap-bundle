@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Silarhi\CapBundle\Tests;
 
+use function array_slice;
 use function class_exists;
 use function dirname;
 use function enum_exists;
@@ -25,9 +26,12 @@ use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use Silarhi\CapBundle\SilarhiCapBundle;
+use Silarhi\CapBundle\Verifier\CapVerifierInterface;
+use Silarhi\CapBundle\Verifier\TestCapVerifier;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\TwigBundle\DependencyInjection\TwigExtension;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
@@ -127,15 +131,76 @@ final class SilarhiCapBundleTest extends TestCase
         }
     }
 
+    public function testRegistersAVerifierPerSiteKey(): void
+    {
+        $builder = $this->builder([]);
+
+        $this->extension()->load([[
+            'endpoint' => 'https://cap.example.com/key/',
+            'secret_key' => 'secret',
+            'site_keys' => ['signup' => ['endpoint' => 'https://cap.example.com/signup-key/', 'secret_key' => 'signup-secret']],
+        ]], $builder);
+
+        self::assertSame(['https://cap.example.com/signup-key/', 'signup-secret', null], array_slice($builder->getDefinition('cap.verifier.signup')->getArguments(), 0, 3));
+        self::assertSame('cap.verifier.signup', (string) $builder->getAlias(CapVerifierInterface::class . ' $signupCapVerifier'));
+        self::assertSame('cap.verifier', (string) $builder->getAlias(CapVerifierInterface::class));
+        self::assertSame(['signup' => 'https://cap.example.com/signup-key/'], $builder->getDefinition('cap.form_type')->getArgument(9));
+    }
+
+    public function testTheDefaultSiteKeyNameIsReserved(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/"default" is the name of the site key of cap.endpoint and cap.secret_key/');
+
+        $this->extension()->load([[
+            'site_keys' => ['default' => ['endpoint' => 'https://cap.example.com/key/', 'secret_key' => 'secret']],
+        ]], $this->builder([]));
+    }
+
+    public function testReplacesTheVerifiersWithTestTokens(): void
+    {
+        $builder = $this->builder([]);
+
+        $this->extension()->load([[
+            'test_tokens' => ['valid-token'],
+            'site_keys' => ['signup' => ['endpoint' => 'https://cap.example.com/signup-key/', 'secret_key' => 'signup-secret']],
+        ]], $builder);
+
+        foreach (['cap.verifier', 'cap.verifier.signup'] as $id) {
+            self::assertSame(TestCapVerifier::class, $builder->getDefinition($id)->getClass());
+            self::assertSame([['valid-token']], $builder->getDefinition($id)->getArguments());
+        }
+    }
+
+    public function testRefusesTestTokensInProduction(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('"cap.test_tokens" makes the Cap challenge useless: set it in the test environment only (when@test).');
+
+        $this->extension()->load([['test_tokens' => ['valid-token']]], $this->builder([], 'prod'));
+    }
+
+    public function testRegistersTheDataCollectorOnlyWhenAsked(): void
+    {
+        $builder = $this->builder([]);
+        $this->extension()->load([[]], $builder);
+        self::assertFalse($builder->hasDefinition('cap.data_collector'));
+
+        $builder = $this->builder([]);
+        $this->extension()->load([['profiler' => true]], $builder);
+        self::assertSame(['id' => 'cap', 'template' => '@SilarhiCap/Collector/cap.html.twig'], $builder->getDefinition('cap.data_collector')->getTag('data_collector')[0] ?? null);
+        self::assertSame('cap.verifier', $builder->getDefinition('cap.verifier.traceable')->getDecoratedService()[0] ?? null);
+    }
+
     /**
      * @param array<string, mixed> $bundlesMetadata
      */
-    private function builder(array $bundlesMetadata): ContainerBuilder
+    private function builder(array $bundlesMetadata, string $environment = 'test'): ContainerBuilder
     {
         // Symfony 6.4 and 7.x load the extension's configuration with the kernel's environment and build directory
         return new ContainerBuilder(new ParameterBag([
             'kernel.bundles_metadata' => $bundlesMetadata,
-            'kernel.environment' => 'test',
+            'kernel.environment' => $environment,
             'kernel.build_dir' => sys_get_temp_dir(),
         ]));
     }

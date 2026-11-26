@@ -111,6 +111,22 @@ declare global {
 /** The elements CapType renders: `data-silarhi-cap="checkbox"` on a `<cap-widget>`, `"invisible"` on a hidden input. */
 export declare const SELECTOR = "[data-silarhi-cap]";
 type CapWidgetElement = CapWidget;
+/** A challenge CapType renders: a `<cap-widget>`, or the hidden input of an invisible one. */
+type CapField = CapWidgetElement | HTMLInputElement;
+/** The detail of `cap:solving` and `cap:solved`, dispatched on the form: the challenges it solves. */
+interface CapSolveDetail {
+  fields: CapField[];
+}
+/** The detail of `cap:failed`: the error of the first challenge that failed, as Cap words it, null without one. */
+interface CapFailedDetail extends CapSolveDetail {
+  error: string | null;
+}
+/** The detail of `cap:progress`, dispatched on the form of the challenge (on the challenge outside a form). */
+interface CapProgressDetail {
+  field: CapField;
+  /** From 0 to 100. */
+  progress: number;
+}
 /**
  * Listens to the document for the forms protected by Cap. Idempotent: call it as often as you like.
  */
@@ -141,4 +157,4 @@ export declare function reset(target: Element | Document): void;
  * The token of a challenge, an empty string when it has none: for adapters that send it themselves.
  */
 export declare function tokenOf(field: Element): string;
-export type { CapWidgetElement };
+export type { CapFailedDetail, CapField, CapProgressDetail, CapSolveDetail, CapWidgetElement };

@@ -16,11 +16,16 @@ namespace Silarhi\CapBundle\Validator;
 use function is_string;
 
 use Override;
+use Psr\Container\ContainerInterface;
 use Silarhi\CapBundle\Verifier\CapVerifierInterface;
 use Silarhi\CapBundle\Verifier\VerificationResult;
+
+use function sprintf;
+
 use Stringable;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
+use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 use Symfony\Component\Validator\Exception\UnexpectedValueException;
 use Symfony\Contracts\Service\ResetInterface;
@@ -34,11 +39,15 @@ final class CapValidator extends ConstraintValidator implements ResetInterface
     private ?VerificationResult $lastResult = null;
 
     /**
-     * @param bool $enabled false (e.g. in the test environment) accepts every value without calling the Cap server
+     * @param CapVerifierInterface    $verifier  the verifier of the default site key
+     * @param bool                    $enabled   false (e.g. in the test environment) accepts every value without calling
+     *                                           the Cap server
+     * @param ContainerInterface|null $verifiers the verifiers of the other site keys, by name (Cap::$siteKey)
      */
     public function __construct(
         private readonly CapVerifierInterface $verifier,
         private readonly bool $enabled = true,
+        private readonly ?ContainerInterface $verifiers = null,
     ) {
     }
 
@@ -67,7 +76,7 @@ final class CapValidator extends ConstraintValidator implements ResetInterface
             return;
         }
 
-        $this->lastResult = $this->verifier->verify($token);
+        $this->lastResult = $this->getVerifier($constraint->siteKey)->verify($token);
 
         if (!$this->lastResult->success) {
             $this->context->buildViolation($constraint->message)
@@ -75,6 +84,20 @@ final class CapValidator extends ConstraintValidator implements ResetInterface
                 ->setCode(Cap::INVALID_ERROR)
                 ->addViolation();
         }
+    }
+
+    private function getVerifier(?string $siteKey): CapVerifierInterface
+    {
+        if (null === $siteKey) {
+            return $this->verifier;
+        }
+
+        $verifier = true === $this->verifiers?->has($siteKey) ? $this->verifiers->get($siteKey) : null;
+        if (!$verifier instanceof CapVerifierInterface) {
+            throw new ConstraintDefinitionException(sprintf('The Cap site key "%s" is not configured: add it to "cap.site_keys".', $siteKey));
+        }
+
+        return $verifier;
     }
 
     /**

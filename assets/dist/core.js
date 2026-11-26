@@ -8,10 +8,15 @@
 const SELECTOR = "[data-silarhi-cap]";
 /** How long the submit of an invisible challenge waits for the cap-widget script before giving up. */
 const WIDGET_TIMEOUT = 1e4;
+/** The wrapper that hides a floating widget until a submit shows it. */
+const FLOATING_SELECTOR = "[data-silarhi-cap-floating]";
+/** How long a solved floating widget shows its checkmark before the form is submitted. */
+const FLOATING_HIDE_DELAY = 500;
 /** Shared by every copy of this module on the page: the bundle's script and an application bundle may both load it. */
 const INSTALLED = Symbol.for("@silarhi/cap-bundle");
 const solving = /* @__PURE__ */ new WeakMap();
 const invisibleCaps = /* @__PURE__ */ new Map();
+const errors = /* @__PURE__ */ new WeakMap();
 const busyForms = /* @__PURE__ */ new WeakSet();
 const bypassedForms = /* @__PURE__ */ new WeakSet();
 /**
@@ -23,6 +28,7 @@ function install() {
 	registry[INSTALLED] = true;
 	document.addEventListener("submit", onSubmit, true);
 	document.addEventListener("focusin", onFocusIn);
+	document.addEventListener("progress", onProgress, true);
 	window.addEventListener("pageshow", (event) => {
 		if (event.persisted) reset(document);
 	});
@@ -60,17 +66,20 @@ function loadWidget(element) {
 * Resolves false when one failed: the widget shows why, an invisible challenge stays empty.
 */
 async function solve(target) {
-	return (await Promise.all(fieldsOf(target).map(solveField))).every(Boolean);
+	return (await Promise.all(fieldsOf(target).map((field) => solveField(field)))).every(Boolean);
 }
 /**
 * Forgets the tokens of a form, a field or the whole document. The Turbo adapter resets them for you; call it after
 * submitting a form with fetch() yourself and keeping it on the page, as a token is single-use.
 */
 function reset(target) {
-	for (const field of fieldsOf(target)) if (isInvisible(field)) {
-		field.value = "";
-		invisibleCaps.get(field)?.reset();
-	} else if (hasToken(field)) field.reset();
+	for (const field of fieldsOf(target)) {
+		if (isInvisible(field)) {
+			field.value = "";
+			invisibleCaps.get(field)?.reset();
+		} else if (hasToken(field)) field.reset();
+		if (isFloating(field)) hideFloating(field);
+	}
 }
 /**
 * The token of a challenge, an empty string when it has none: for adapters that send it themselves.
@@ -86,17 +95,53 @@ function fieldsOf(target) {
 function isInvisible(field) {
 	return field instanceof HTMLInputElement;
 }
+function isFloating(field) {
+	return !isInvisible(field) && field.dataset.silarhiCap === "floating";
+}
 function hasToken(field) {
 	return isInvisible(field) ? field.value !== "" : Boolean(field.token);
 }
-function solveField(field) {
+/**
+* @param anchor the button a floating widget shows up next to: the submitter, or the first submit button of the form
+*/
+function solveField(field, anchor = null) {
 	if (hasToken(field)) return Promise.resolve(true);
 	let pending = solving.get(field);
 	if (!pending) {
-		pending = (isInvisible(field) ? solveInvisible(field) : solveWidget(field)).finally(() => solving.delete(field));
+		errors.delete(field);
+		pending = (isInvisible(field) ? solveInvisible(field) : isFloating(field) ? solveFloating(field, anchor) : solveWidget(field)).finally(() => solving.delete(field));
 		solving.set(field, pending);
 	}
 	return pending;
+}
+async function solveFloating(widget, anchor) {
+	showFloating(widget, anchor ?? widget.closest("form")?.querySelector("[type=\"submit\"]") ?? null);
+	const solved = await solveWidget(widget);
+	if (solved) {
+		await new Promise((resolve) => setTimeout(resolve, FLOATING_HIDE_DELAY));
+		hideFloating(widget);
+	}
+	return solved;
+}
+function showFloating(widget, anchor) {
+	const wrapper = widget.closest(FLOATING_SELECTOR);
+	if (!wrapper) return;
+	wrapper.hidden = false;
+	if (!anchor) return;
+	wrapper.style.position = "absolute";
+	wrapper.style.zIndex = "99999";
+	const parent = wrapper.offsetParent;
+	const containerRect = (parent && (parent !== document.body || getComputedStyle(parent).position !== "static") ? parent : document.documentElement).getBoundingClientRect();
+	const anchorRect = anchor.getBoundingClientRect();
+	const offset = Number.parseInt(widget.dataset.silarhiCapOffset ?? "", 10) || 8;
+	const left = Math.max(2, Math.min(anchorRect.left + (anchorRect.width - wrapper.offsetWidth) / 2, window.innerWidth - wrapper.offsetWidth));
+	const top = widget.dataset.silarhiCapPosition === "bottom" ? Math.min(anchorRect.bottom + offset, window.innerHeight - wrapper.offsetHeight) : Math.max(0, anchorRect.top - wrapper.offsetHeight - offset);
+	wrapper.style.left = `${left - containerRect.left}px`;
+	wrapper.style.top = `${top - containerRect.top}px`;
+}
+function hideFloating(widget) {
+	const wrapper = widget.closest(FLOATING_SELECTOR);
+	if (wrapper) wrapper.hidden = true;
 }
 async function solveWidget(widget) {
 	if (!await widgetDefined()) return false;
@@ -108,7 +153,10 @@ async function solveWidget(widget) {
 			resolve(solved);
 		};
 		const onSolve = () => settle(true);
-		const onError = () => settle(false);
+		const onError = (event) => {
+			recordError(widget, event);
+			settle(false);
+		};
 		widget.addEventListener("solve", onSolve);
 		widget.addEventListener("error", onError);
 		Promise.resolve(widget.solve()).catch(() => settle(false));
@@ -124,7 +172,9 @@ async function solveInvisible(input) {
 			input.value = token;
 			return true;
 		}
-	} catch {}
+	} catch (error) {
+		if (!errors.has(input) && error instanceof Error) errors.set(input, error.message);
+	}
 	return false;
 }
 function createInvisibleCap(CapClass, input) {
@@ -141,6 +191,8 @@ function createInvisibleCap(CapClass, input) {
 	cap.addEventListener("reset", () => {
 		input.value = "";
 	});
+	cap.addEventListener("error", (event) => recordError(input, event));
+	cap.addEventListener("progress", (event) => dispatchProgress(input, event));
 	invisibleCaps.set(input, cap);
 	return cap;
 }
@@ -161,13 +213,28 @@ function onSubmit(event) {
 	if (busyForms.has(form)) return;
 	busyForms.add(form);
 	form.setAttribute("aria-busy", "true");
-	form.dispatchEvent(new CustomEvent("cap:solving", { bubbles: true }));
+	form.dispatchEvent(new CustomEvent("cap:solving", {
+		bubbles: true,
+		detail: { fields: pending }
+	}));
 	const submitter = event.submitter;
-	Promise.all(pending.map(solveField)).then((results) => {
+	Promise.all(pending.map((field) => solveField(field, submitter))).then((results) => {
 		busyForms.delete(form);
 		form.removeAttribute("aria-busy");
-		const solved = results.every(Boolean);
-		form.dispatchEvent(new CustomEvent(solved ? "cap:solved" : "cap:failed", { bubbles: true }));
+		if (results.every(Boolean)) form.dispatchEvent(new CustomEvent("cap:solved", {
+			bubbles: true,
+			detail: { fields: pending }
+		}));
+		else {
+			const error = pending.map((field) => errors.get(field)).find((message) => message !== void 0) ?? null;
+			form.dispatchEvent(new CustomEvent("cap:failed", {
+				bubbles: true,
+				detail: {
+					fields: pending,
+					error
+				}
+			}));
+		}
 		if (!form.isConnected) return;
 		bypassedForms.add(form);
 		try {
@@ -182,5 +249,25 @@ function onFocusIn(event) {
 	const form = event.target instanceof Element ? event.target.closest("form") : null;
 	if (!form) return;
 	for (const field of fieldsOf(form)) if (isInvisible(field) && !hasToken(field)) solveField(field);
+}
+function onProgress(event) {
+	const field = event.target;
+	if (field instanceof Element && !isInvisible(field) && field.matches("[data-silarhi-cap]")) dispatchProgress(field, event);
+}
+function dispatchProgress(field, event) {
+	const progress = event.detail?.progress;
+	if (typeof progress !== "number") return;
+	(field.closest("form") ?? field).dispatchEvent(new CustomEvent("cap:progress", {
+		bubbles: true,
+		detail: {
+			field,
+			progress
+		}
+	}));
+}
+/** Keeps the message of an "error" event of Cap, for the detail of cap:failed. */
+function recordError(field, event) {
+	const message = event.detail?.message;
+	if (typeof message === "string") errors.set(field, message);
 }
 export { reset as a, loadWidget as i, configure as n, solve as o, install as r, tokenOf as s, SELECTOR as t };

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Silarhi\CapBundle;
 
+use function array_map;
 use function class_exists;
 use function interface_exists;
 use function is_array;
@@ -21,16 +22,20 @@ use function is_string;
 
 use LogicException;
 use Override;
+use Silarhi\CapBundle\DataCollector\CapDataCollector;
 use Silarhi\CapBundle\Form\CapType;
 use Silarhi\CapBundle\Validator\CapValidator;
 use Silarhi\CapBundle\Verifier\CapVerifier;
 use Silarhi\CapBundle\Verifier\CapVerifierInterface;
+use Silarhi\CapBundle\Verifier\TestCapVerifier;
+use Silarhi\CapBundle\Verifier\TraceableCapVerifier;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service_locator;
 
 use Symfony\Component\HttpClient\Psr18Client;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
@@ -60,9 +65,32 @@ final class SilarhiCapBundle extends AbstractBundle
                     ->defaultNull()
                     ->info('The /siteverify URL, as the server reaches it (e.g. http://cap:3000/<site-key>/siteverify in Docker). Defaults to <endpoint>siteverify.')
                 ->end()
+                ->arrayNode('site_keys')
+                    ->info('Other site keys, by name, for the site_key option of CapType and the siteKey of the Cap constraint: a light one for a newsletter, a hard one for signing up...')
+                    ->useAttributeAsKey('name')
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('endpoint')->isRequired()->cannotBeEmpty()->end()
+                            ->scalarNode('secret_key')->isRequired()->cannotBeEmpty()->end()
+                            ->scalarNode('verify_url')->defaultNull()->end()
+                        ->end()
+                    ->end()
+                    ->validate()
+                        ->ifTrue(static fn (array $siteKeys): bool => isset($siteKeys['default']))
+                        ->thenInvalid('"default" is the name of the site key of cap.endpoint and cap.secret_key: name this one otherwise.')
+                    ->end()
+                ->end()
                 ->booleanNode('enabled')
                     ->defaultTrue()
                     ->info('false renders no widget and accepts every submission: for the test environment.')
+                ->end()
+                ->arrayNode('test_tokens')
+                    ->info('For the test environment: the tokens every site key accepts, without calling the Cap server. It rejects the others like an expired token.')
+                    ->scalarPrototype()->cannotBeEmpty()->end()
+                ->end()
+                ->booleanNode('profiler')
+                    ->defaultFalse()
+                    ->info('Adds a Cap panel to the Symfony profiler: the tokens verified during the request and the answer of the Cap server.')
                 ->end()
                 ->scalarNode('http_client')
                     ->defaultNull()
@@ -134,7 +162,10 @@ final class SilarhiCapBundle extends AbstractBundle
          *     endpoint: string,
          *     secret_key: string,
          *     verify_url: string|null,
+         *     site_keys: array<string, array{endpoint: string, secret_key: string, verify_url: string|null}>,
          *     enabled: bool,
+         *     test_tokens: list<string>,
+         *     profiler: bool,
          *     http_client: string|null,
          *     request_factory: string|null,
          *     stream_factory: string|null,
@@ -150,25 +181,70 @@ final class SilarhiCapBundle extends AbstractBundle
         }
         $httpClient = $config['http_client'] ?? 'psr18.http_client';
 
-        // The endpoint is often an env var: its trailing slash can only be normalized at runtime
-        $services->set('cap.verifier', CapVerifier::class)
-            ->factory([CapVerifier::class, 'fromEndpoint'])
-            ->args([
-                $config['endpoint'],
-                $config['secret_key'],
-                $config['verify_url'],
-                service($httpClient),
-                service($config['request_factory'] ?? $httpClient),
-                service($config['stream_factory'] ?? $httpClient),
-                service('logger')->ignoreOnInvalid(),
-            ])
-            ->tag('monolog.logger', ['channel' => 'cap']);
+        if ([] !== $config['test_tokens'] && 'prod' === $builder->getParameter('kernel.environment')) {
+            throw new LogicException('"cap.test_tokens" makes the Cap challenge useless: set it in the test environment only (when@test).');
+        }
+
+        $siteKeys = ['default' => [
+            'endpoint' => $config['endpoint'],
+            'secret_key' => $config['secret_key'],
+            'verify_url' => $config['verify_url'],
+        ]] + $config['site_keys'];
+
+        $verifiers = [];
+        $traceableVerifiers = [];
+        foreach ($siteKeys as $name => $siteKey) {
+            $id = 'default' === $name ? 'cap.verifier' : 'cap.verifier.' . $name;
+
+            if ([] !== $config['test_tokens']) {
+                $services->set($id, TestCapVerifier::class)->args([$config['test_tokens']]);
+            } else {
+                // The endpoint is often an env var: its trailing slash can only be normalized at runtime
+                $services->set($id, CapVerifier::class)
+                    ->factory([CapVerifier::class, 'fromEndpoint'])
+                    ->args([
+                        $siteKey['endpoint'],
+                        $siteKey['secret_key'],
+                        $siteKey['verify_url'],
+                        service($httpClient),
+                        service($config['request_factory'] ?? $httpClient),
+                        service($config['stream_factory'] ?? $httpClient),
+                        service('logger')->ignoreOnInvalid(),
+                    ])
+                    ->tag('monolog.logger', ['channel' => 'cap']);
+            }
+
+            if ($config['profiler']) {
+                $services->set($id . '.traceable', TraceableCapVerifier::class)
+                    ->decorate($id)
+                    ->args([service('.inner'), $name, service('debug.stopwatch')->ignoreOnInvalid()])
+                    ->tag('kernel.reset', ['method' => 'reset']);
+                $traceableVerifiers[] = service($id . '.traceable');
+            }
+
+            if ('default' !== $name) {
+                // CapVerifierInterface $signupCapVerifier, or #[Target('signup.cap_verifier')]
+                $builder->registerAliasForArgument($id, CapVerifierInterface::class, $name . '.cap_verifier');
+                $verifiers[$name] = service($id);
+            }
+        }
         $services->alias(CapVerifierInterface::class, 'cap.verifier');
 
         $services->set('cap.validator', CapValidator::class)
-            ->args([service('cap.verifier'), $config['enabled']])
+            ->args([service('cap.verifier'), $config['enabled'], service_locator($verifiers)])
             ->tag('validator.constraint_validator')
             ->tag('kernel.reset', ['method' => 'reset']);
+
+        if ($config['profiler']) {
+            $services->set('cap.data_collector', CapDataCollector::class)
+                ->args([
+                    $traceableVerifiers,
+                    $config['enabled'],
+                    [] !== $config['test_tokens'],
+                    array_map(static fn (array $siteKey): string => $siteKey['endpoint'], $siteKeys),
+                ])
+                ->tag('data_collector', ['id' => CapDataCollector::NAME, 'template' => '@SilarhiCap/Collector/cap.html.twig']);
+        }
 
         $services->set('cap.form_type', CapType::class)
             ->args([
@@ -181,6 +257,7 @@ final class SilarhiCapBundle extends AbstractBundle
                 $config['adapters'],
                 service('assets.packages')->ignoreOnInvalid(),
                 service('request_stack')->ignoreOnInvalid(),
+                array_map(static fn (array $siteKey): string => $siteKey['endpoint'], $config['site_keys']),
             ])
             ->tag('form.type');
     }

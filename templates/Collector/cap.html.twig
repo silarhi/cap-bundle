@@ -1,0 +1,131 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{# @var collector \Silarhi\CapBundle\DataCollector\CapDataCollector #}
+
+{% block toolbar %}
+    {% set nb_failures = collector.countFailures %}
+    {% set icon %}
+        {{ block('cap_icon') }}
+        <span class="sf-toolbar-value">{{ collector.verifications|length }}</span>
+    {% endset %}
+
+    {% set text %}
+        <div class="sf-toolbar-info-piece">
+            <b>Status</b>
+            <span class="sf-toolbar-status {{ not collector.enabled or collector.testMode ? 'sf-toolbar-status-yellow' }}">{{ block('cap_status') }}</span>
+        </div>
+        <div class="sf-toolbar-info-piece">
+            <b>Verified tokens</b>
+            <span class="sf-toolbar-status">{{ collector.verifications|length }}</span>
+        </div>
+        <div class="sf-toolbar-info-piece">
+            <b>Rejected tokens</b>
+            <span class="sf-toolbar-status {{ nb_failures > 0 ? 'sf-toolbar-status-red' }}">{{ nb_failures }}</span>
+        </div>
+    {% endset %}
+
+    {% include '@WebProfiler/Profiler/toolbar_item.html.twig' with { link: profiler_url, status: nb_failures > 0 ? 'red' : '' } %}
+{% endblock %}
+
+{% block menu %}
+    {% set nb_failures = collector.countFailures %}
+    <span class="label {{ nb_failures > 0 ? 'label-status-error' }} {{ collector.verifications is empty ? 'disabled' }}">
+        <span class="icon">{{ block('cap_icon') }}</span>
+        <strong>Cap</strong>
+        {% if nb_failures > 0 %}
+            <span class="count"><span>{{ nb_failures }}</span></span>
+        {% endif %}
+    </span>
+{% endblock %}
+
+{% block panel %}
+    <h2>Cap</h2>
+
+    <div class="metrics">
+        <div class="metric">
+            <span class="value">{{ block('cap_status') }}</span>
+            <span class="label">Status</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.verifications|length }}</span>
+            <span class="label">Verified tokens</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.countFailures }}</span>
+            <span class="label">Rejected tokens</span>
+        </div>
+    </div>
+
+    {% if not collector.enabled %}
+        <div class="empty">
+            <p>The challenge is disabled (<code>cap.enabled: false</code>): forms render no widget and every submission is accepted.</p>
+        </div>
+    {% elseif collector.testMode %}
+        <div class="empty">
+            <p>The Cap server is not called: the site keys accept the tokens of <code>cap.test_tokens</code> only.</p>
+        </div>
+    {% endif %}
+
+    <h3>Verifications</h3>
+
+    {% if collector.verifications is empty %}
+        <div class="empty">
+            <p>No token was verified during this request.</p>
+        </div>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Site key</th>
+                    <th scope="col">Token</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for verification in collector.verifications %}
+                    <tr>
+                        <td>{{ verification.siteKey }}</td>
+                        <td class="font-normal"><code>{{ verification.token }}</code></td>
+                        <td>
+                            {% if verification.result.success %}
+                                <span class="badge badge-success">Accepted</span>
+                            {% else %}
+                                <span class="badge badge-error">Rejected</span> {{ verification.result.error }}
+                            {% endif %}
+                        </td>
+                        <td class="font-normal">{{ '%.1f'|format(verification.duration) }} ms</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <h3>Site keys</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Endpoint</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name, endpoint in collector.endpoints %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td class="font-normal">{{ endpoint }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block cap_status collector.enabled ? (collector.testMode ? 'Test tokens' : 'Enabled') : 'Disabled' %}
+
+{% block cap_icon %}
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/>
+        <path d="M9 12l2 2 4-4"/>
+    </svg>
+{% endblock %}

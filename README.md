@@ -39,13 +39,16 @@
 ## Features
 
 - **One form field**: `CapType` renders the widget and validates the token on submit, with the `Cap` constraint
-- **Checkbox or invisible**: Cap's widget, or nothing at all: the challenge is solved while the visitor fills the form
+- **Checkbox, floating or invisible**: Cap's widget, the widget next to the submit button once the form is submitted,
+  or nothing at all: the challenge is solved while the visitor fills the form
+- **Several site keys**: a light challenge for the newsletter, a harder one for signing up
 - **SPA ready**: a framework-agnostic core for any SPA, the back-forward cache and forms you submit with `fetch()`,
   plus opt-in adapters for Turbo Drive and Live Components
 - **Stimulus or not**: a controller StimulusBundle or Symfony Reprise registers for you, or a script the form renders, with no build step
 - **Self-hosted end to end**: your Cap server, and the widget script and its WebAssembly solver from your domain if you like
 - **Fails closed**: a Cap server out of reach rejects the submission, and the error stays on the field
 - **Any payload**: the `#[Cap]` constraint and the `CapVerifierInterface` service protect JSON endpoints too
+- **Testable**: test tokens that skip the Cap server, and an opt-in profiler panel
 
 ## Requirements
 
@@ -92,7 +95,7 @@ missing or rejected one is a form error on the field.
 Everything else is on **[cap-bundle.silarhi.dev](https://cap-bundle.silarhi.dev)**:
 
 - [Installation](https://cap-bundle.silarhi.dev/getting-started/installation/) and [configuration reference](https://cap-bundle.silarhi.dev/getting-started/configuration/)
-- The form type: [checkbox and invisible modes](https://cap-bundle.silarhi.dev/guides/form-type/), [labels and languages](https://cap-bundle.silarhi.dev/guides/translations/)
+- The form type: [checkbox, floating and invisible modes](https://cap-bundle.silarhi.dev/guides/form-type/), [labels and languages](https://cap-bundle.silarhi.dev/guides/translations/)
 - JavaScript: [without a build step, with Stimulus, Symfony Reprise or your bundler](https://cap-bundle.silarhi.dev/guides/javascript/), [Turbo, Live Components and SPAs](https://cap-bundle.silarhi.dev/guides/turbo/)
 - [Self-hosting the widget](https://cap-bundle.silarhi.dev/guides/self-hosting/), [Content Security Policy](https://cap-bundle.silarhi.dev/guides/content-security-policy/)
 - [Migrating from reCAPTCHA](https://cap-bundle.silarhi.dev/guides/migrating-from-recaptcha/) (KarserRecaptcha3Bundle)

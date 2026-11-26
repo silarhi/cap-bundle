@@ -17,6 +17,7 @@ use function is_string;
 
 use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Silarhi\CapBundle\DataCollector\CapDataCollector;
 use Silarhi\CapBundle\Form\CapMode;
 use Silarhi\CapBundle\Form\CapType;
 use Silarhi\CapBundle\Tests\Fixtures\CapServerMock;
@@ -28,12 +29,15 @@ use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
+use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Service\ResetInterface;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
@@ -140,6 +144,35 @@ final class CapTypeTest extends KernelTestCase
         self::assertCount(1, $crawler->filter('script[type="module"]'));
     }
 
+    public function testRendersAFloatingChallengeInAHiddenWrapper(): void
+    {
+        self::bootKernel();
+
+        $crawler = $this->render($this->createForm(['mode' => CapMode::Floating, 'floating_position' => 'bottom', 'floating_offset' => 12]));
+        $wrapper = $crawler->filter('div[data-silarhi-cap-floating]');
+        $widget = $wrapper->filter('cap-widget');
+
+        self::assertSame('', $wrapper->attr('hidden'));
+        self::assertCount(1, $widget);
+        self::assertSame('floating', $widget->attr('data-silarhi-cap'));
+        self::assertSame('form[cap]', $widget->attr('data-cap-hidden-field-name'));
+        self::assertSame('bottom', $widget->attr('data-silarhi-cap-position'));
+        self::assertSame('12', $widget->attr('data-silarhi-cap-offset'));
+        self::assertNull($widget->attr('required'), 'The browser would not submit a required control it cannot show');
+    }
+
+    public function testTurnsTheHapticsOff(): void
+    {
+        self::bootKernel();
+
+        $widget = $this->render($this->createForm())->filter('cap-widget');
+        self::assertNull($widget->attr('data-cap-disable-haptics'));
+        self::assertNull($widget->attr('data-silarhi-cap-position'), 'Floating mode only');
+
+        $widget = $this->render($this->createForm(['haptics' => false]))->filter('cap-widget');
+        self::assertNotNull($widget->attr('data-cap-disable-haptics'));
+    }
+
     public function testAcceptsTheModeAsAString(): void
     {
         self::bootKernel();
@@ -155,7 +188,7 @@ final class CapTypeTest extends KernelTestCase
 
         $this->expectException(InvalidOptionsException::class);
 
-        $this->createForm(['mode' => 'floating']);
+        $this->createForm(['mode' => 'popup']);
     }
 
     public function testAcceptsATokenTheServerAccepts(): void
@@ -298,6 +331,117 @@ final class CapTypeTest extends KernelTestCase
         } finally {
             unset($_SERVER['CAP_ENDPOINT'], $_SERVER['CAP_SECRET_KEY']);
         }
+    }
+
+    public function testRendersAndVerifiesWithTheSiteKeyOfTheForm(): void
+    {
+        self::bootKernel(['environment' => 'site_keys']);
+        $this->mockCapServer(['success' => true]);
+
+        $crawler = $this->render($this->createForm(['site_key' => 'signup']));
+        self::assertSame('https://cap.example.com/signup-key/', $crawler->filter('cap-widget')->attr('data-cap-api-endpoint'));
+
+        $form = $this->createForm(['site_key' => 'signup']);
+        $form->submit(['name' => 'Jane', 'cap' => 'signup-key:abc:def']);
+        self::assertTrue($form->isValid());
+
+        $form = $this->createForm();
+        $form->submit(['name' => 'Jane', 'cap' => 'site-key:abc:def']);
+        self::assertTrue($form->isValid());
+
+        self::assertSame([
+            ['url' => 'https://cap.example.com/signup-key/siteverify', 'body' => '{"secret":"signup-secret","response":"signup-key:abc:def"}'],
+            ['url' => 'https://cap.example.com/site-key/siteverify', 'body' => '{"secret":"secret","response":"site-key:abc:def"}'],
+        ], $this->capServer()->requests);
+    }
+
+    public function testTheConstraintVerifiesWithItsSiteKey(): void
+    {
+        self::bootKernel(['environment' => 'site_keys']);
+        $this->mockCapServer(['success' => true]);
+
+        $message = new class {
+            #[Cap(siteKey: 'signup')]
+            public ?string $token = 'signup-key:abc:def';
+        };
+
+        $validator = self::getContainer()->get('test.validator');
+        self::assertInstanceOf(ValidatorInterface::class, $validator);
+
+        self::assertCount(0, $validator->validate($message));
+        self::assertSame('https://cap.example.com/signup-key/siteverify', $this->capServer()->requests[0]['url'] ?? null);
+    }
+
+    public function testRejectsASiteKeyThatIsNotConfigured(): void
+    {
+        self::bootKernel(['environment' => 'site_keys']);
+
+        $this->expectException(InvalidOptionsException::class);
+        $this->expectExceptionMessage('The Cap site key "newsletter" is not configured: add it to "cap.site_keys".');
+
+        $this->createForm(['site_key' => 'newsletter']);
+    }
+
+    /**
+     * @return iterable<string, array{string|null, string|null}>
+     */
+    public static function provideTestTokens(): iterable
+    {
+        yield 'a test token' => ['valid-token', null];
+        yield 'another token' => ['site-key:abc:def', Cap::INVALID_ERROR];
+        yield 'no token' => [null, Cap::MISSING_ERROR];
+    }
+
+    #[DataProvider('provideTestTokens')]
+    public function testAcceptsTheTestTokensOnlyWithoutCallingTheServer(?string $token, ?string $code): void
+    {
+        self::bootKernel(['environment' => 'test_tokens']);
+
+        $form = $this->createForm();
+        $form->submit(['name' => 'Jane', 'cap' => $token]);
+
+        $errors = $form->get('cap')->getErrors();
+        self::assertSame(null === $code ? [] : [$code], array_map(static fn (FormError $error): ?string => $error->getCause() instanceof ConstraintViolation ? $error->getCause()->getCode() : null, iterator_to_array($errors)));
+        self::assertSame([], $this->capServer()->requests);
+    }
+
+    public function testTheProfilerListsTheVerifiedTokens(): void
+    {
+        self::bootKernel(['environment' => 'profiler']);
+        $this->mockCapServer(['success' => false, 'error' => 'Token expired']);
+
+        $form = $this->createForm(['site_key' => 'signup']);
+        $form->submit(['name' => 'Jane', 'cap' => 'signup-key:abc:def']);
+
+        $collector = self::getContainer()->get('test.cap.data_collector');
+        self::assertInstanceOf(CapDataCollector::class, $collector);
+        $collector->collect(new Request(), new Response());
+
+        self::assertTrue($collector->isEnabled());
+        self::assertFalse($collector->isTestMode());
+        self::assertSame(['default' => 'https://cap.example.com/site-key', 'signup' => 'https://cap.example.com/signup-key'], $collector->getEndpoints());
+        self::assertCount(1, $collector->getVerifications());
+        self::assertSame('signup', $collector->getVerifications()[0]->siteKey);
+        self::assertSame('signup-key:abc:def', $collector->getVerifications()[0]->token);
+        self::assertSame('Token expired', $collector->getVerifications()[0]->result->error);
+        self::assertSame(1, $collector->countFailures());
+
+        $twig = self::getContainer()->get('test.twig');
+        self::assertInstanceOf(Environment::class, $twig);
+        $template = $twig->load('@SilarhiCap/Collector/cap.html.twig');
+        $context = ['collector' => $collector, 'profiler_url' => '/_profiler/abc', 'token' => 'abc', 'name' => 'cap', 'profiler_markup_version' => 3];
+
+        $panel = new Crawler($template->renderBlock('panel', $context));
+        self::assertStringContainsString('signup-key:abc:def', $panel->filter('table')->first()->text());
+        self::assertStringContainsString('Rejected Token expired', $panel->filter('table')->first()->text());
+        self::assertStringContainsString('1', $template->renderBlock('menu', $context));
+        self::assertStringContainsString('sf-toolbar-status-red', $template->renderBlock('toolbar', $context));
+
+        $resetter = self::getContainer()->get('services_resetter');
+        self::assertInstanceOf(ResetInterface::class, $resetter);
+        $resetter->reset();
+        $collector->collect(new Request(), new Response());
+        self::assertSame([], $collector->getVerifications(), 'Long-running workers forget the tokens of the previous request');
     }
 
     /**

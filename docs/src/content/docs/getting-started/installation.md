@@ -25,7 +25,8 @@ applications, installs `symfony/http-client` and `nyholm/psr7` when the applicat
 implementation. If your `composer.json` does not allow it (`config.allow-plugins`), require them yourself:
 `composer require symfony/http-client nyholm/psr7`.
 
-Register the bundle if Flex did not:
+With Symfony Flex, the bundle's recipe registers it, adds `CAP_ENDPOINT` and `CAP_SECRET_KEY` to `.env` and creates
+`config/packages/cap.yaml`. Otherwise, register the bundle:
 
 ```php
 // config/bundles.php

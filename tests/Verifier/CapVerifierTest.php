@@ -105,6 +105,36 @@ final class CapVerifierTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{MockResponse, string}>
+     */
+    public static function provideRejections(): iterable
+    {
+        yield 'token not found' => [new JsonMockResponse(['success' => false, 'error' => 'Token not found'], ['http_code' => 404]), 'info'];
+        yield 'token expired' => [new JsonMockResponse(['success' => false, 'error' => 'Token expired'], ['http_code' => 403]), 'info'];
+        yield 'malformed token' => [new JsonMockResponse(['success' => false, 'error' => 'Missing required parameters'], ['http_code' => 400]), 'info'];
+        yield 'wrong secret' => [new JsonMockResponse(['success' => false, 'error' => 'Invalid site key or secret'], ['http_code' => 403]), 'error'];
+        yield 'rate limited' => [new JsonMockResponse(['error' => 'Rate limit exceeded'], ['http_code' => 429]), 'error'];
+    }
+
+    /**
+     * A wrong token is the visitor's doing, a wrong secret rejects every submission.
+     */
+    #[DataProvider('provideRejections')]
+    public function testLogsConfigurationErrorsAsErrors(MockResponse $response, string $level): void
+    {
+        $logger = new BufferingLogger();
+
+        $this->verifier($response, $logger)->verify('key:abc:def');
+
+        $levels = [];
+        foreach ($logger->cleanLogs() as $log) {
+            self::assertIsArray($log);
+            $levels[] = $log[0] ?? null;
+        }
+        self::assertSame([$level], $levels);
+    }
+
+    /**
      * A PSR-18 client over Symfony's MockHttpClient, with Nyholm's PSR-17 factories.
      */
     private function verifier(MockResponse|Closure $response, ?LoggerInterface $logger = null): CapVerifier

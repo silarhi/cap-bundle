@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Silarhi\CapBundle\Verifier;
 
+use function in_array;
 use function is_array;
 use function is_string;
 use function json_decode;
@@ -32,6 +33,9 @@ use SensitiveParameter;
  */
 final readonly class CapVerifier implements CapVerifierInterface
 {
+    /** The errors of the Cap server about the token itself, which a visitor causes: the others are configuration errors. */
+    private const TOKEN_ERRORS = ['Token not found', 'Token expired', 'Missing required parameters'];
+
     /**
      * @param string $verifyUrl the /siteverify URL of the site key, e.g. https://cap.example.com/<site-key>/siteverify
      */
@@ -123,7 +127,17 @@ final readonly class CapVerifier implements CapVerifierInterface
         $error = $data['error'] ?? null;
         $result = VerificationResult::failure(is_string($error) && '' !== $error ? $error : VerificationResult::ERROR_UNKNOWN);
 
-        $this->logger?->info('Cap token rejected: {error}.', ['error' => $result->error]);
+        // A visitor's token is wrong: routine. Anything else (a wrong secret, an old one, the rate limit) rejects every
+        // submission, and must not hide among them
+        if (in_array($result->error, self::TOKEN_ERRORS, true)) {
+            $this->logger?->info('Cap token rejected: {error}.', ['error' => $result->error]);
+        } else {
+            $this->logger?->error('Cap server refused to verify the token: {error}. Check the secret key, and the site key of the endpoint.', [
+                'error' => $result->error,
+                'status' => $response->getStatusCode(),
+                'url' => $this->verifyUrl,
+            ]);
+        }
 
         return $result;
     }

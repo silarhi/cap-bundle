@@ -14,8 +14,14 @@ cap:
     secret_key: '%env(CAP_SECRET_KEY)%'
     # The /siteverify URL, as the server reaches it. Defaults to <endpoint>siteverify
     verify_url: null
+    # Other site keys, by name: endpoint, secret_key and verify_url each. See "Several site keys"
+    site_keys: {}
     # false renders no widget and accepts every submission: for the test environment
     enabled: true
+    # The tokens every site key accepts without calling the Cap server: for the test environment only
+    test_tokens: []
+    # Adds a Cap panel to the Symfony profiler
+    profiler: false
     # PSR-18 HTTP client service ID calling /siteverify. null: Symfony's psr18.http_client
     http_client: null
     # PSR-17 request and stream factory service IDs. null: the HTTP client (psr18.http_client is both)
@@ -47,6 +53,37 @@ cap:
     endpoint: 'https://cap.example.com/%env(CAP_SITE_KEY)%/'
     verify_url: 'http://cap:3000/%env(CAP_SITE_KEY)%/siteverify'
 ```
+
+## Several site keys
+
+Each site key of Cap has its own difficulty: a light one for a newsletter, a harder one for signing up. `endpoint` and
+`secret_key` are the default site key; name the others under `site_keys`:
+
+```yaml
+cap:
+    endpoint: '%env(CAP_ENDPOINT)%'
+    secret_key: '%env(CAP_SECRET_KEY)%'
+    site_keys:
+        signup:
+            endpoint: '%env(CAP_SIGNUP_ENDPOINT)%'
+            secret_key: '%env(CAP_SIGNUP_SECRET_KEY)%'
+            # verify_url: 'http://cap:3000/%env(CAP_SIGNUP_SITE_KEY)%/siteverify'
+```
+
+The [`site_key` option](/guides/form-type/#options) of `CapType` picks one, and verifies the token with its secret:
+
+```php
+$builder->add('captcha', CapType::class, ['site_key' => 'signup']);
+```
+
+So does the constraint, `#[Cap(siteKey: 'signup')]`, and each site key has its own verifier, autowired by name:
+
+```php
+public function __construct(private readonly CapVerifierInterface $signupCapVerifier) {}
+```
+
+or `#[Target('signup.cap_verifier')]`. `default` names the site key of `endpoint` and `secret_key`: it cannot be used
+under `site_keys`.
 
 ## The HTTP client
 
@@ -87,6 +124,24 @@ cap:
 
 A Cap server out of reach, answering a 5xx or something else than JSON rejects the submission (the bundle fails
 closed) and logs an error on the `cap` channel.
+
+## Logs
+
+The bundle logs on the `cap` channel. A token the visitor got wrong (`Token not found`, `Token expired`, a malformed
+token) is an `info`. Anything else rejects every submission, and is an `error`: a wrong `secret_key`, an endpoint
+pointing to another site key, a secret made by an older Cap release, Cap's rate limit, a Cap server out of reach.
+
+## The profiler
+
+```yaml
+when@dev:
+    cap:
+        profiler: true
+```
+
+adds a Cap panel to the Symfony profiler: the tokens verified during the request with their site key, the answer of
+the Cap server and how long it took, and the site keys of the configuration. The verifications also show up in the
+Performance panel, under `cap.verify`. It needs `symfony/web-profiler-bundle`.
 
 ## The widget
 
