@@ -23,7 +23,8 @@ Stimulus or no build step at all.
 
 ```
 src/
-├── Form/CapType.php         # The field: view vars, options (mode, locale, worker_count, troubleshooting_url, i18n, csp_nonce)
+├── Form/CapType.php         # The field: view vars, options (mode, locale, worker_count, troubleshooting_url, i18n,
+│                            #   csp_nonce, haptics)
 ├── Form/CapMode.php         # Enum of the mode option (Checkbox, Invisible); CapType's normalizer also takes its values
 ├── Validator/               # Cap constraint (#[Cap]) and CapValidator (enabled: false accepts everything)
 ├── Verifier/                # CapVerifierInterface, CapVerifier (PSR-18 client + PSR-17 factories, never throws),

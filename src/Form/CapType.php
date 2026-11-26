@@ -83,6 +83,7 @@ final class CapType extends AbstractType
         $view->vars['troubleshooting_url'] = $options['troubleshooting_url'];
         $view->vars['i18n'] = $options['i18n'];
         $view->vars['csp_nonce'] = $options['csp_nonce'];
+        $view->vars['haptics'] = $options['haptics'];
         $view->vars['wasm_url'] = $this->assetUrl($this->wasmUrl);
         $view->vars['hashwx_url'] = $this->assetUrl($this->hashwxUrl);
         $view->vars['adapters'] = $this->adapters;
@@ -107,6 +108,7 @@ final class CapType extends AbstractType
             'troubleshooting_url' => null,
             'i18n' => [],
             'csp_nonce' => null,
+            'haptics' => true,
         ]);
 
         $resolver->setAllowedTypes('mode', [CapMode::class, 'string']);
@@ -119,11 +121,13 @@ final class CapType extends AbstractType
         $resolver->setAllowedTypes('troubleshooting_url', ['null', 'string']);
         $resolver->setAllowedTypes('i18n', 'string[]');
         $resolver->setAllowedTypes('csp_nonce', ['null', 'string']);
+        $resolver->setAllowedTypes('haptics', 'bool');
 
         $resolver->setInfo('mode', 'CapMode::Checkbox shows the Cap widget, CapMode::Invisible solves the challenge without any UI.');
         $resolver->setInfo('locale', 'Language of the widget labels (data-cap-lang). Defaults to the request locale.');
         $resolver->setInfo('i18n', 'Widget labels, keyed by the suffix of their data-cap-i18n-* attribute: ["initial-state" => "..."].');
         $resolver->setInfo('csp_nonce', 'Nonce of the <script> tag, and of the <style> the widget injects, for a strict Content-Security-Policy.');
+        $resolver->setInfo('haptics', 'false turns off the vibrations of the widget on mobile (data-cap-disable-haptics).');
     }
 
     /**

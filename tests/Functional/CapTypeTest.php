@@ -140,6 +140,17 @@ final class CapTypeTest extends KernelTestCase
         self::assertCount(1, $crawler->filter('script[type="module"]'));
     }
 
+    public function testTurnsTheHapticsOff(): void
+    {
+        self::bootKernel();
+
+        $widget = $this->render($this->createForm())->filter('cap-widget');
+        self::assertNull($widget->attr('data-cap-disable-haptics'));
+
+        $widget = $this->render($this->createForm(['haptics' => false]))->filter('cap-widget');
+        self::assertNotNull($widget->attr('data-cap-disable-haptics'));
+    }
+
     public function testAcceptsTheModeAsAString(): void
     {
         self::bootKernel();

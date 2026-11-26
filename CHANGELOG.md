@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.0] - Unreleased
 
+### Added
+
+- The `haptics` option of `CapType`: `false` turns off the vibrations of the widget on mobile.
+
 ### Changed
 
 - A configuration error (a wrong secret key, an endpoint of another site key, an old secret, Cap's rate limit) is

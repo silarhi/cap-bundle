@@ -75,6 +75,7 @@ Invisible mode needs the JavaScript of the bundle, the checkbox mode only needs 
 | `worker_count`        | `null`              | Number of solver workers (`data-cap-worker-count`); Cap uses one per CPU core                                 |
 | `troubleshooting_url` | `null`              | The "Troubleshooting" link Cap shows a blocked visitor (`data-cap-troubleshooting-url`)                       |
 | `csp_nonce`           | `null`              | Nonce of the script and of the widget styles: see [Content Security Policy](/guides/content-security-policy/) |
+| `haptics`             | `true`              | `false` turns off the vibrations of the widget on mobile (`data-cap-disable-haptics`)                         |
 | `constraints`         | `[new Cap()]`       | Replace it to customize the messages: `[new Cap(message: '…', missingMessage: '…')]`                          |
 | `attr`                | `[]`                | Attributes of the `<cap-widget>` (or of the hidden input), e.g. a `class`                                     |
 | `required`            | `true`              | Checkbox mode: the browser asks to tick the widget before submitting                                          |

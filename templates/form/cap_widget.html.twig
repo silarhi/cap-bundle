@@ -14,6 +14,7 @@
             'data-cap-lang': locale,
             'data-cap-worker-count': worker_count,
             'data-cap-troubleshooting-url': troubleshooting_url,
+            'data-cap-disable-haptics': haptics ? null : true,
         } -%}
         {%- for key, label in i18n -%}
             {%- set cap_attr = cap_attr|merge({('data-cap-i18n-' ~ key): label}) -%}
