@@ -30,6 +30,14 @@ describe('Turbo adapter', () => {
         expect((form.querySelector('cap-widget') as FakeWidget).token).toBeNull()
     })
 
+    it('ignores a turbo:submit-end that does not come from a form', async () => {
+        const form = render(html)
+        await solve(form)
+
+        document.dispatchEvent(new CustomEvent('turbo:submit-end'))
+        expect(new FormData(form).get('contact[captcha]')).toBe('token-1')
+    })
+
     it('keeps no token in the page Turbo caches', async () => {
         const form = render(html)
         await solve(form)

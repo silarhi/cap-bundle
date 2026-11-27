@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { installAdapters } from '../src/adapters'
 import { configure, install, reset, solve } from '../src/core'
 import { defineFakes, FakeCap, FakeWidget, render, resetFakes, submitted } from './fakes'
 
@@ -43,6 +44,32 @@ describe('invisible challenge', () => {
         expect(FakeWidget.solves).toBe(1)
     })
 
+    it('waits for the solve the focus started when the visitor submits', async () => {
+        const form = render(html)
+        const done = submitted(form)
+
+        form.querySelector('button')?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+        form.requestSubmit()
+        await done
+        expect(new FormData(form).get('contact[cap]')).toBe('token-1')
+        expect(FakeWidget.solves).toBe(1)
+    })
+
+    it('does not solve again on focus a challenge that has its token', async () => {
+        const form = render(html)
+        await solve(form)
+
+        form.querySelector('button')?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+        expect(FakeWidget.solves).toBe(1)
+    })
+
+    it('ignores a focus that does not come from an element', () => {
+        render(html)
+        document.dispatchEvent(new FocusEvent('focusin'))
+
+        expect(FakeWidget.solves).toBe(0)
+    })
+
     it('submits once however many times the visitor clicks while solving', async () => {
         const form = render(html)
         const listener = vi.fn((event: Event) => event.preventDefault())
@@ -67,8 +94,39 @@ describe('invisible challenge', () => {
         expect(new FormData(form).get('contact[cap]')).toBe('')
     })
 
+    it('solves again, with the same Cap, a challenge that failed', async () => {
+        FakeWidget.fail = true
+        const form = render(html)
+        expect(await solve(form)).toBe(false)
+
+        FakeWidget.fail = false
+        expect(await solve(form)).toBe(true)
+        expect(new FormData(form).get('contact[cap]')).toBe('token-2')
+        expect(FakeCap.configs).toHaveLength(1)
+    })
+
+    it('keeps the hidden widgets of the challenges still on the page', async () => {
+        const form = render(`<form>
+            <input type="hidden" name="contact[cap]" data-silarhi-cap="invisible" data-cap-api-endpoint="https://cap.test/key/">
+            <input type="hidden" name="contact[cap2]" data-silarhi-cap="invisible" data-cap-api-endpoint="https://cap.test/other/">
+        </form>`)
+
+        expect(await solve(form)).toBe(true)
+        expect(document.documentElement.querySelectorAll(':scope > cap-widget')).toHaveLength(2)
+        expect(new FormData(form).get('contact[cap]')).not.toBe(new FormData(form).get('contact[cap2]'))
+    })
+
+    it('gives Cap an empty endpoint when CapType rendered none', async () => {
+        const form = render('<form><input type="hidden" name="contact[cap]" data-silarhi-cap="invisible"></form>')
+
+        await solve(form)
+        expect(FakeCap.configs).toEqual([{ apiEndpoint: '' }])
+    })
+
     it('leaves Turbo events to the Turbo adapter', async () => {
         const form = render(html)
+        // A challenge that lists no adapter
+        installAdapters(form.querySelector('input') as HTMLInputElement)
         await solve(form)
 
         form.dispatchEvent(new CustomEvent('turbo:submit-end', { bubbles: true }))
@@ -186,6 +244,26 @@ describe('checkbox challenge', () => {
         expect(failed).toHaveBeenCalledOnce()
     })
 
+    it('fails a widget whose solve() rejects', async () => {
+        const form = render(html)
+        const widget = form.querySelector('cap-widget') as FakeWidget
+        widget.solve = vi.fn(() => Promise.reject(new Error('Worker crashed')))
+        const failed = vi.fn()
+        form.addEventListener('cap:failed', failed)
+        const done = submitted(form)
+
+        form.requestSubmit()
+        await done
+        expect(failed.mock.calls[0]?.[0].detail.error).toBeNull()
+    })
+
+    it('does not solve on focus, the widget does it on its own', () => {
+        const form = render(html)
+        form.querySelector('button')?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+
+        expect(FakeWidget.solves).toBe(0)
+    })
+
     it('resets the widgets of a form', async () => {
         const form = render(html)
         const widget = form.querySelector('cap-widget') as FakeWidget
@@ -221,6 +299,103 @@ describe('floating challenge', () => {
         expect(event.submitter).toBe(button)
         expect(wrapper.hidden).toBe(true)
         expect((form.querySelector('cap-widget') as FakeWidget).token).toBe('token-1')
+    })
+
+    it('shows the widget 8px above the button by default', async () => {
+        const form = render(`<form novalidate>
+            <div data-silarhi-cap-floating hidden>
+                <cap-widget data-silarhi-cap="floating" data-cap-hidden-field-name="contact[cap]"></cap-widget>
+            </div>
+            <button type="submit">Send</button>
+        </form>`)
+        const wrapper = form.querySelector('[data-silarhi-cap-floating]') as HTMLElement
+        const button = form.querySelector('button') as HTMLButtonElement
+        button.getBoundingClientRect = () => DOMRect.fromRect({ x: 100, y: 200, width: 80, height: 30 })
+        const done = submitted(form)
+
+        button.click()
+        // jsdom lays nothing out: the wrapper is 0px high
+        expect(wrapper.style.top).toBe('192px')
+        expect(wrapper.style.left).toBe('140px')
+        await done
+    })
+
+    describe('in a positioned container', () => {
+        afterEach(() => {
+            document.body.style.position = ''
+        })
+
+        /** jsdom has no layout: offsetParent is always null, getBoundingClientRect() always empty. */
+        function place(form: HTMLFormElement, parent: Element, rect: DOMRect): void {
+            const wrapper = form.querySelector('[data-silarhi-cap-floating]') as HTMLElement
+            Object.defineProperty(wrapper, 'offsetParent', { get: () => parent })
+            parent.getBoundingClientRect = () => rect
+            ;(form.querySelector('button') as HTMLButtonElement).getBoundingClientRect = () =>
+                DOMRect.fromRect({ x: 100, y: 200, width: 80, height: 30 })
+        }
+
+        it('places the widget in its offset parent', async () => {
+            const form = render(`<div class="modal">${html}</div>`)
+            place(form, form.parentElement as HTMLElement, DOMRect.fromRect({ x: 50, y: 100, width: 500, height: 500 }))
+            const done = submitted(form)
+
+            form.querySelector('button')?.click()
+            const wrapper = form.querySelector('[data-silarhi-cap-floating]') as HTMLElement
+            expect(wrapper.style.left).toBe('90px')
+            expect(wrapper.style.top).toBe('142px')
+            await done
+        })
+
+        it('places the widget in a positioned body', async () => {
+            const form = render(html)
+            document.body.style.position = 'relative'
+            place(form, document.body, DOMRect.fromRect({ x: 0, y: -300, width: 1024, height: 2000 }))
+            const done = submitted(form)
+
+            form.querySelector('button')?.click()
+            expect((form.querySelector('[data-silarhi-cap-floating]') as HTMLElement).style.top).toBe('542px')
+            await done
+        })
+
+        it('places the widget in the document when the body is not positioned', async () => {
+            const form = render(html)
+            place(form, document.body, DOMRect.fromRect({ x: 0, y: -300, width: 1024, height: 2000 }))
+            const done = submitted(form)
+
+            form.querySelector('button')?.click()
+            expect((form.querySelector('[data-silarhi-cap-floating]') as HTMLElement).style.top).toBe('242px')
+            await done
+        })
+    })
+
+    it('shows the widget where it is in a form without a submit button', async () => {
+        const form = render(`<form novalidate>
+            <div data-silarhi-cap-floating hidden>
+                <cap-widget data-silarhi-cap="floating" data-cap-hidden-field-name="contact[cap]"></cap-widget>
+            </div>
+        </form>`)
+        const wrapper = form.querySelector('[data-silarhi-cap-floating]') as HTMLElement
+        const done = submitted(form)
+
+        form.requestSubmit()
+        expect(wrapper.hidden).toBe(false)
+        expect(wrapper.style.position).toBe('')
+
+        const event = await done
+        expect(event.submitter).toBeNull()
+        expect(wrapper.hidden).toBe(true)
+    })
+
+    it('solves and resets a widget rendered without its wrapper', async () => {
+        const widget = document.createElement('cap-widget') as FakeWidget
+        widget.dataset.silarhiCap = 'floating'
+        document.body.append(widget)
+
+        expect(await solve(widget)).toBe(true)
+        expect(widget.token).toBe('token-1')
+
+        reset(widget)
+        expect(widget.token).toBeNull()
     })
 
     it('keeps a failed widget on the page, with its error', async () => {
@@ -288,6 +463,70 @@ describe('events', () => {
             ['CAP-WIDGET', 100],
             ['INPUT', 100],
         ])
+    })
+
+    it('gives no error when Cap words none', async () => {
+        const form = render(html)
+        const widget = form.querySelector('cap-widget') as FakeWidget
+        widget.solve = vi.fn(async () => {
+            widget.dispatchEvent(new CustomEvent('error', { detail: { message: 404 } }))
+            return undefined
+        })
+        const failed = vi.fn()
+        form.addEventListener('cap:failed', failed)
+
+        const done = submitted(form)
+        form.requestSubmit()
+        await done
+        expect(failed.mock.calls[0]?.[0].detail.error).toBeNull()
+    })
+
+    it.each([
+        ['an Error', () => Promise.reject(new Error('Network down')), 'Network down'],
+        ['something else than an Error', () => Promise.reject('Network down'), null],
+        [
+            'an Error after an error event',
+            function (this: FakeCap) {
+                this.widget.dispatchEvent(new CustomEvent('error', { detail: { message: 'Invalid site key' } }))
+                return Promise.reject(new Error('Network down'))
+            },
+            'Invalid site key',
+        ],
+    ])('gives the error of an invisible challenge whose solve() rejects with %s', async (_, rejected, error) => {
+        const spy = vi.spyOn(FakeCap.prototype, 'solve').mockImplementationOnce(rejected)
+        const form = render(`<form>
+            <input type="hidden" name="contact[cap]" data-silarhi-cap="invisible" data-cap-api-endpoint="https://cap.test/key/">
+        </form>`)
+        const failed = vi.fn()
+        form.addEventListener('cap:failed', failed)
+        const done = submitted(form)
+
+        form.requestSubmit()
+        await done
+        spy.mockRestore()
+        expect(failed.mock.calls[0]?.[0].detail.error).toBe(error)
+        expect(new FormData(form).get('contact[cap]')).toBe('')
+    })
+
+    it('ignores the progress events without a progress', () => {
+        const form = render(html)
+        const progress = vi.fn()
+        form.addEventListener('cap:progress', progress)
+        const widget = form.querySelector('cap-widget') as FakeWidget
+
+        widget.dispatchEvent(new CustomEvent('progress', { detail: null }))
+        widget.dispatchEvent(new CustomEvent('progress', { detail: { progress: '50' } }))
+        expect(progress).not.toHaveBeenCalled()
+    })
+
+    it('reports the progress of a challenge outside a form on the challenge', () => {
+        render('<cap-widget data-silarhi-cap="checkbox"></cap-widget>')
+        const widget = document.querySelector('cap-widget') as FakeWidget
+        const progress = vi.fn((event: CustomEvent) => event.detail)
+        widget.addEventListener('cap:progress', progress as unknown as EventListener)
+
+        widget.dispatchEvent(new CustomEvent('progress', { detail: { progress: 50 } }))
+        expect(progress.mock.results[0]?.value).toEqual({ field: widget, progress: 50 })
     })
 
     it('ignores the progress events of other elements', () => {
