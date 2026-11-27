@@ -14,13 +14,13 @@ declare(strict_types=1);
 namespace Silarhi\CapBundle\Tests\Validator;
 
 use Override;
+use Silarhi\CapBundle\Tests\Fixtures\ServiceLocator;
 use Silarhi\CapBundle\Validator\Cap;
 use Silarhi\CapBundle\Validator\CapValidator;
 use Silarhi\CapBundle\Verifier\CapVerifierInterface;
 use Silarhi\CapBundle\Verifier\TestCapVerifier;
 use Silarhi\CapBundle\Verifier\VerificationResult;
 use stdClass;
-use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;

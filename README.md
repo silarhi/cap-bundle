@@ -53,7 +53,8 @@
 ## Requirements
 
 - PHP 8.2+
-- Symfony 6.4, 7.x or 8.x
+- Symfony 6.4, 7.x or 8.x (`symfony/form`, `symfony/validator`): the bundle class is optional, see
+  [Without the bundle](#without-the-bundle)
 - A PSR-18 HTTP client and a PSR-17 implementation: Composer installs `symfony/http-client` and `nyholm/psr7` when
   the application has none (`php-http/discovery`), or set your own client
 - A [Cap Standalone](https://trycap.dev/guide/standalone/) server, and a site key created in its dashboard
@@ -76,6 +77,47 @@ when@test:
     cap:
         enabled: false
 ```
+
+### Without the bundle
+
+The bundle class is optional: an application without the framework, `symfony/dependency-injection` or
+`symfony/http-kernel` builds the verifier, the validator and the form type by hand. Pass the widget paths the bundle
+sets by default, or the widget never loads:
+
+```php
+use Silarhi\CapBundle\Form\CapType;
+use Silarhi\CapBundle\Validator\CapValidator;
+use Silarhi\CapBundle\Verifier\CapVerifier;
+use Symfony\Component\Form\Extension\Validator\ValidatorExtension;
+use Symfony\Component\Form\Forms;
+use Symfony\Component\HttpClient\Psr18Client;
+use Symfony\Component\Validator\ConstraintValidatorFactory;
+use Symfony\Component\Validator\Validation;
+
+$httpClient = new Psr18Client(); // any PSR-18 client, with PSR-17 request and stream factories
+$verifier = CapVerifier::fromEndpoint($endpoint, $secretKey, null, $httpClient, $httpClient, $httpClient, $logger);
+
+$validator = Validation::createValidatorBuilder()
+    ->setConstraintValidatorFactory(new ConstraintValidatorFactory([CapValidator::class => new CapValidator($verifier)]))
+    ->setTranslator($translator) // the messages are keys of vendor/silarhi/cap-bundle/translations/validators.*.xlf
+    ->setTranslationDomain('validators')
+    ->getValidator();
+
+$formFactory = Forms::createFormFactoryBuilder()
+    ->addExtension(new ValidatorExtension($validator))
+    ->addType(new CapType(
+        $endpoint,
+        widgetScript: CapType::WIDGET_SCRIPT_PATH,
+        wasmUrl: CapType::WASM_PATH,
+        hashwxUrl: CapType::HASHWX_PATH,
+    ))
+    ->getFormFactory();
+```
+
+Then add `vendor/silarhi/cap-bundle/templates` to the Twig loader as the `SilarhiCap` namespace,
+`@SilarhiCap/form/cap_widget.html.twig` to the form themes, and copy `vendor/silarhi/cap-bundle/public/` to
+`public/bundles/silarhicap/`. The [installation guide](https://cap-bundle.silarhi.dev/getting-started/installation/#without-the-bundle)
+wires Twig and the other site keys.
 
 ## Quick start
 

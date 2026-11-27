@@ -5,8 +5,13 @@
          colors="true"
 >
     <testsuites>
-        <testsuite name="Cap Bundle Test Suite">
+        <testsuite name="unit">
             <directory>tests</directory>
+            <exclude>tests/Functional</exclude>
+        </testsuite>
+        <!-- Its kernel needs the framework: the "PHPUnit without the bundle dependencies" CI job leaves it out -->
+        <testsuite name="functional">
+            <directory>tests/Functional</directory>
         </testsuite>
     </testsuites>
 

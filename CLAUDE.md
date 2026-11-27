@@ -15,6 +15,9 @@ Stimulus or no build step at all.
 - **Framework**: Symfony 6.4 / 7.x / 8.x (`symfony/form`, `symfony/validator`), PSR-18 / PSR-17 for `/siteverify`
   (Symfony's `psr18.http_client` by default, which needs `symfony/http-client` and a PSR-17 implementation:
   `php-http/discovery` installs both when the application has none)
+- **Dev**: `symfony/config`, `symfony/dependency-injection`, `symfony/http-kernel` (the bundle class and the profiler
+  panel: only a kernel loads them, and a kernel has them; `conflict` keeps them at 6.4+), `symfony/framework-bundle`,
+  `symfony/twig-bundle`, `symfony/web-profiler-bundle` (functional tests)
 - **Optional**: `symfony/twig-bundle` (form theme), `symfony/asset` (versioned script URL), StimulusBundle
 - **JavaScript**: `@hotwired/stimulus` (optional peer); `cap-widget` and `@cap.js/wasm` are dev dependencies the build
   copies to `public/widget/`; built with tsdown, tested with Vitest and Playwright
@@ -55,8 +58,9 @@ assets/
 └── test/                    # Vitest (jsdom) with fake <cap-widget> and Cap
 public/cap.js                # Built, committed: assets:install copies public/ to public/bundles/silarhicap/
 public/widget/               # Built, committed: cap.min.js, cap_wasm_bg.wasm, hashwx.wasm, their LICENSE
-tests/                       # PHPUnit: Verifier/, Validator/ unit tests, Functional/ (TestKernel per environment:
-                             #   test, disabled, custom)
+tests/                       # PHPUnit: `unit` suite (Verifier/, Validator/, Form/: StandaloneCapTypeTest wires
+                             #   everything by hand; SilarhiCapBundleTest, group `bundle`), `functional` suite
+                             #   (Functional/: TestKernel per environment: test, disabled, custom)
 ```
 
 ## Build & Test Commands
@@ -78,7 +82,11 @@ pnpm build                                  # commit assets/dist and public/cap.
 ## CI/CD
 
 - **Laminas CI Matrix Action** (`.github/workflows/continuous-integration.yml`): PHPUnit on every supported PHP, lowest
-  and latest dependencies, PHPStan, PHP CS Fixer, composer checks (`.laminas-ci.json`)
+  and latest dependencies, PHPStan, PHP CS Fixer, composer checks and "PHPUnit without the bundle
+  dependencies" (`.laminas-ci.json`). The latter removes the framework, the Twig and profiler bundles,
+  `symfony/config`, `symfony/dependency-injection` and `symfony/http-kernel`, then runs the `unit` suite without the
+  `bundle` group (`SilarhiCapBundleTest`). The `functional` suite (its `KernelTestCase` cannot even load without the
+  framework) is left out
 - Jobs `Lint`, `Test`, `Build` run in `assets/`; `Build` fails when the committed built files differ from a fresh build
 - Job `E2E`: Playwright (`assets/e2e`) against a `tiago2/cap` service container (pinned, Renovate bumps it), through
   `tests/E2E/E2eKernel.php` served by `php -S tests/E2E/router.php`; `tests/E2E/create-site-key.sh` creates the site key
@@ -148,6 +156,14 @@ inline-block }`, which beats the `hidden` attribute, and inline styles break str
   bundle's own `composer.json` sets `allow-plugins.php-http/discovery: false`, its dev dependencies provide both. Tests go through the real chain: `framework.http_client.mock_response_factory`
   (`tests/Fixtures/CapServerMock.php`).
 - Optional services (`assets.packages`, `request_stack`, `logger`) are injected with `ignoreOnInvalid()`.
+- **Usable without a kernel** (README and installation guide, "Without the bundle"): only `SilarhiCapBundle.php`
+  may use `symfony/config`, `symfony/dependency-injection` or `symfony/http-kernel`, plus `CapDataCollector`, which
+  extends HttpKernel's `DataCollector` but is only registered for the profiler (`cap.profiler`), so only a kernel
+  loads it. Everything else is built by hand by applications without one: keep its constructors usable that way, and
+  require in `composer.json` every package it imports (`psr/container` for the site key locator of `CapValidator`,
+  `symfony/service-contracts` for `ResetInterface`...). `symfony/asset` and `symfony/stopwatch` stay suggestions:
+  nullable collaborators, never loaded unless given. Tests use `tests/Fixtures/ServiceLocator.php` as a PSR-11
+  container, not the one of `symfony/dependency-injection`.
 
 ## Coding Conventions
 
