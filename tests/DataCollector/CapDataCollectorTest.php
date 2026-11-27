@@ -15,6 +15,7 @@ namespace Silarhi\CapBundle\Tests\DataCollector;
 
 use function array_map;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Silarhi\CapBundle\DataCollector\CapDataCollector;
 use Silarhi\CapBundle\Verifier\TestCapVerifier;
@@ -23,6 +24,11 @@ use Silarhi\CapBundle\Verifier\TracedVerification;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Needs symfony/http-kernel, whose DataCollector the collector extends: only the profiler of a kernel loads it, and the
+ * "PHPUnit without the bundle dependencies" CI job removes http-kernel and excludes this group.
+ */
+#[Group('bundle')]
 final class CapDataCollectorTest extends TestCase
 {
     public function testCollectsTheVerificationsOfEverySiteKey(): void
