@@ -87,6 +87,7 @@ pnpm build                                  # commit assets/dist and public/cap.
   `symfony/config`, `symfony/dependency-injection` and `symfony/http-kernel`, then runs the `unit` suite without the
   `bundle` group (`SilarhiCapBundleTest`). The `functional` suite (its `KernelTestCase` cannot even load without the
   framework) is left out
+- PHPStan runs in the matrix (lowest PHP, latest dependencies) and on the latest PHP ("PHPStan on the latest PHP" in `.laminas-ci.json`): ignore an error inline with `@phpstan-ignore`, or in `phpstan.neon` with `reportUnmatched: false` when only one of the two setups reports it
 - Jobs `Lint`, `Test`, `Build` run in `assets/`; `Build` fails when the committed built files differ from a fresh build
 - Job `E2E`: Playwright (`assets/e2e`) against a `tiago2/cap` service container (pinned, Renovate bumps it), through
   `tests/E2E/E2eKernel.php` served by `php -S tests/E2E/router.php`; `tests/E2E/create-site-key.sh` creates the site key

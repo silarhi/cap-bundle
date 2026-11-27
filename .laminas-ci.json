@@ -28,6 +28,14 @@
                 "dependencies": "latest",
                 "command": "composer remove --dev --no-interaction symfony/framework-bundle symfony/twig-bundle symfony/web-profiler-bundle symfony/config symfony/dependency-injection symfony/http-kernel && ! composer show symfony/config 2>/dev/null && ! composer show symfony/dependency-injection 2>/dev/null && ! composer show symfony/http-kernel 2>/dev/null && vendor/bin/phpunit --testsuite unit --exclude-group bundle --no-coverage"
             }
+        },
+        {
+            "name": "PHPStan on the latest PHP",
+            "job": {
+                "php": "8.5",
+                "dependencies": "latest",
+                "command": "vendor/bin/phpstan analyse --no-progress"
+            }
         }
     ]
 }
