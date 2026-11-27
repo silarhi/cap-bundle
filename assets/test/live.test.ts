@@ -79,6 +79,21 @@ describe('Live Components adapter', () => {
         ])
     })
 
+    it('forgets nothing when the component left the page before the request was over', async () => {
+        const form = render(html)
+        const widget = form.querySelector('cap-widget') as FakeWidget
+        await widget.solve()
+        const live = liveComponent(form)
+        live.component.set.mockRejectedValueOnce(new Error('The component is gone'))
+        form.addEventListener('submit', (event) => event.preventDefault())
+
+        form.requestSubmit()
+        // Once the rejection settled
+        await new Promise((resolve) => setTimeout(resolve))
+        expect(live.component.set).toHaveBeenCalledExactlyOnceWith('contact[captcha]', 'token-1', false)
+        expect(widget.token).toBe('token-1')
+    })
+
     it('waits for the core to solve the challenge', async () => {
         const form = render(html)
         const live = liveComponent(form)
