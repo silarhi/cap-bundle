@@ -33,14 +33,16 @@
     "require": {
         "php": ">=8.2",
         "php-http/discovery": "^1.20.0",
+        "psr/container": "^1.1 || ^2.0",
         "psr/http-client": "^1.0.3",
         "psr/http-client-implementation": "^1.0",
         "psr/http-factory": "^1.1",
         "psr/http-factory-implementation": "^1.0",
-        "symfony/config": "^6.4 || ^7.0 || ^8.0",
-        "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
+        "psr/log": "^1.1 || ^2.0 || ^3.0",
         "symfony/form": "^6.4 || ^7.0 || ^8.0",
-        "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-foundation": "^6.4 || ^7.0 || ^8.0",
+        "symfony/options-resolver": "^6.4 || ^7.0 || ^8.0",
+        "symfony/service-contracts": "^2.5 || ^3.0",
         "symfony/validator": "^6.4 || ^7.0 || ^8.0"
     },
     "require-dev": {
@@ -56,19 +58,28 @@
         "symfony/asset": "^6.4 || ^7.0 || ^8.0",
         "symfony/asset-mapper": "^6.4 || ^7.0 || ^8.0",
         "symfony/browser-kit": "^6.4 || ^7.0 || ^8.0",
+        "symfony/config": "^6.4 || ^7.0 || ^8.0",
         "symfony/css-selector": "^6.4 || ^7.0 || ^8.0",
+        "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
         "symfony/error-handler": "^6.4 || ^7.0 || ^8.0",
+        "symfony/filesystem": "^6.4 || ^7.0 || ^8.0",
         "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
         "symfony/http-client": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0",
         "symfony/stopwatch": "^6.4 || ^7.0 || ^8.0",
         "symfony/translation": "^6.4 || ^7.0 || ^8.0",
         "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
         "symfony/web-profiler-bundle": "^6.4 || ^7.0 || ^8.0",
         "twig/twig": "^3.0"
     },
+    "conflict": {
+        "symfony/config": "<6.4",
+        "symfony/dependency-injection": "<6.4",
+        "symfony/http-kernel": "<6.4"
+    },
     "suggest": {
         "symfony/asset": "Versions the URL of the bundle's script (bundles/silarhicap/cap.js) like your other assets",
-        "symfony/framework-bundle": "Register Silarhi\\CapBundle\\SilarhiCapBundle for zero-config service wiring",
+        "symfony/framework-bundle": "Register Silarhi\\CapBundle\\SilarhiCapBundle for zero-config service wiring (optional: without it, build CapVerifier, CapValidator and CapType by hand, without symfony/dependency-injection nor symfony/http-kernel)",
         "symfony/http-client": "Provides Symfony's psr18.http_client, the default HTTP client calling /siteverify, unless cap.http_client is set",
         "symfony/translation": "Translates the validation messages, which are translation keys (cap.validation.*)",
         "symfony/twig-bundle": "Renders the CapType widget: the bundle adds its form theme to twig.form_themes"

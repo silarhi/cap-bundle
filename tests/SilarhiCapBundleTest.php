@@ -21,6 +21,7 @@ use function interface_exists;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RequiresPhpunit;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
@@ -45,7 +46,11 @@ use function trait_exists;
  * The extension of the bundle without a kernel, for the applications the functional tests cannot stand for: without
  * FrameworkBundle, Twig, symfony/asset-mapper or symfony/http-client. The last two are installed here: the tests that
  * need them gone hide them from the autoloader, in a process of their own.
+ *
+ * Needs symfony/config and symfony/dependency-injection: the "PHPUnit without the bundle dependencies" CI job removes
+ * both and excludes this group.
  */
+#[Group('bundle')]
 final class SilarhiCapBundleTest extends TestCase
 {
     public function testPrependsTheFormThemeAndTheAssetMapperPath(): void

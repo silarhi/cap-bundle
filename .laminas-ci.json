@@ -20,6 +20,14 @@
                 "dependencies": "latest",
                 "command": "composer validate --strict && composer normalize --dry-run --diff"
             }
+        },
+        {
+            "name": "PHPUnit without the bundle dependencies",
+            "job": {
+                "php": "@lowest",
+                "dependencies": "latest",
+                "command": "composer remove --dev --no-interaction symfony/framework-bundle symfony/twig-bundle symfony/web-profiler-bundle symfony/config symfony/dependency-injection symfony/http-kernel && ! composer show symfony/config 2>/dev/null && ! composer show symfony/dependency-injection 2>/dev/null && ! composer show symfony/http-kernel 2>/dev/null && vendor/bin/phpunit --testsuite unit --exclude-group bundle --no-coverage"
+            }
         }
     ]
 }
