@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - Unreleased
+
+### Changed
+
+- `psr/log` is no longer required: `CapVerifier` only takes an optional logger, and an application passing one already
+  has the package.
+
 ## [0.6.0] - 2026-11-27
 
 ### Changed
@@ -96,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validation messages as translation keys of the `validators` domain (`cap.validation.missing`,
   `cap.validation.invalid`), translated in English, French, German, Spanish, Italian, Dutch and Portuguese.
 
+[0.6.1]: https://github.com/silarhi/cap-bundle/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/silarhi/cap-bundle/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/silarhi/cap-bundle/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/silarhi/cap-bundle/compare/v0.3.0...v0.4.0
